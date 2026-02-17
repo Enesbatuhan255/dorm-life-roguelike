@@ -13,22 +13,80 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_SLEEP_COLLAPSE
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_SLEEP_001
-  title: Sleep Collapse
-  description: Uykusuzluk performansi cokerdi.
+  title: Uyku Cokusu
+  description: Gun boyu gozun yaniyor. Derste cumleleri takip ederken bir an kopuyorsun.
+    Aksam yurda donunce ayakkabilarini bile cikarmadan yataga oturuyorsun. Yarin
+    toparlarim dedigin sey, artik sadece bir cumle.
   category: Major
   selectionWeight: 1
-  requiredContextTags:
-  - 3
+  requiredContextTags: 03000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Zorunlu dinlen
+  - text: Zorunlu dinlen (bugun bitiyor)
+    notes: 
     effects:
     - statType: 2
-      delta: -8
+      delta: 4
     - statType: 1
-      delta: -7
+      delta: 2
+    - statType: 4
+      delta: -0.05
+    flags:
+    - key: sleep_debt
+      mode: 0
+      numericValue: -2
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Kahve + dus + devam (kisa vadeli)
+    notes: 
+    effects:
+    - statType: 3
+      delta: -40
+    - statType: 2
+      delta: 1
+    - statType: 1
+      delta: -2
+    flags:
+    - key: sleep_debt
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Zorla calis (crunch denemesi)
+    notes: 
+    effects:
+    - statType: 2
+      delta: -3
+    - statType: 1
+      delta: -5
+    - statType: 4
+      delta: 0.08
+    flags:
+    - key: burnout
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds:
+    - EVT_MAJOR_WORK_001
+    followUpDelayDays: 1
     timeAdvanceHours: 0

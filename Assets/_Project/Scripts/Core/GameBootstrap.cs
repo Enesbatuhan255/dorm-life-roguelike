@@ -71,7 +71,9 @@ namespace DormLifeRoguelike
 
             var statSystem = new StatSystem();
             var timeManager = new TimeManager();
-            var eventManager = new EventManager(statSystem, timeManager);
+            var flagStateService = new FlagStateService();
+            var eventManager = new EventManager(statSystem, timeManager, flagStateService);
+            var flagRuleService = new FlagRuleService(flagStateService, statSystem, timeManager, eventManager);
 
             var runtimeInflationConfig = inflationShockConfig != null
                 ? inflationShockConfig
@@ -100,7 +102,8 @@ namespace DormLifeRoguelike
                 statSystem,
                 BuildRuntimeEventPool(),
                 schedulerCheckIntervalHours,
-                runtimeCooldownConfig);
+                runtimeCooldownConfig,
+                flagStateService);
 
             var runtimeWorkLimitConfig = workLimitConfig != null
                 ? workLimitConfig
@@ -119,7 +122,22 @@ namespace DormLifeRoguelike
             var runtimeEndingDatabase = !isUsingFallbackEndingDatabase
                 ? endingDatabase
                 : EndingDatabase.CreateRuntimeDefault();
-            var gameOutcomeSystem = new GameOutcomeSystem(timeManager, statSystem, runtimeGameOutcomeConfig, runtimeAcademicConfig, runtimeEndingDatabase);
+            var gameOutcomeSystem = new GameOutcomeSystem(
+                timeManager,
+                statSystem,
+                runtimeGameOutcomeConfig,
+                runtimeAcademicConfig,
+                runtimeEndingDatabase,
+                flagStateService);
+            var saveLoadService = new SaveLoadService(
+                timeManager,
+                statSystem,
+                flagStateService,
+                saveRootPath: null,
+                migrator: null,
+                eventManager: eventManager,
+                eventScheduler: eventScheduler,
+                gameOutcomeSystem: gameOutcomeSystem);
 
             var runtimeMentalConfig = mentalConfig != null
                 ? mentalConfig
@@ -169,6 +187,9 @@ namespace DormLifeRoguelike
 
             ServiceLocator.Register<IStatSystem>(statSystem);
             ServiceLocator.Register<ITimeManager>(timeManager);
+            ServiceLocator.Register<IFlagStateService>(flagStateService);
+            ServiceLocator.Register<IFlagRuleService>(flagRuleService);
+            ServiceLocator.Register<ISaveLoadService>(saveLoadService);
             ServiceLocator.Register<IEventManager>(eventManager);
             ServiceLocator.Register<IEconomySystem>(economySystem);
             ServiceLocator.Register<IInflationShockSystem>(inflationSystem);
@@ -180,10 +201,27 @@ namespace DormLifeRoguelike
             ServiceLocator.Register<IDayPlanningService>(dayPlanningService);
             ServiceLocator.Register<IEventScheduler>(eventScheduler);
             ServiceLocator.Register<IGameOutcomeSystem>(gameOutcomeSystem);
+            TryHandleStartRequest(saveLoadService);
 
             EnsureGameOutcomePanelPresenter();
             EnsureMicroChallengePanelPresenter();
+            EnsureFlagDebugPanelPresenter();
+            EnsureSaveLoadPanelPresenter();
             EnsureRealtimeTimeDriver();
+        }
+
+        private static void TryHandleStartRequest(ISaveLoadService saveLoadService)
+        {
+            if (saveLoadService == null || !GameStartRequest.ConsumeQuickLoad())
+            {
+                return;
+            }
+
+            var loaded = saveLoadService.LoadQuick();
+            if (!loaded)
+            {
+                Debug.Log("[GameBootstrap] Continue requested but quick save was not found.");
+            }
         }
 
         private void OnDestroy()
@@ -228,6 +266,18 @@ namespace DormLifeRoguelike
                 && inflationSystem is System.IDisposable disposableInflationSystem)
             {
                 disposableInflationSystem.Dispose();
+            }
+
+            if (ServiceLocator.TryGet<IFlagRuleService>(out var flagRuleService)
+                && flagRuleService is System.IDisposable disposableFlagRuleService)
+            {
+                disposableFlagRuleService.Dispose();
+            }
+
+            if (ServiceLocator.TryGet<ISaveLoadService>(out var saveLoadService)
+                && saveLoadService is System.IDisposable disposableSaveLoadService)
+            {
+                disposableSaveLoadService.Dispose();
             }
 
             if (ServiceLocator.TryGet<IGameOutcomeSystem>(out var gameOutcomeSystem)
@@ -358,6 +408,42 @@ namespace DormLifeRoguelike
 
             var fallbackRoot = new GameObject("MicroChallengePanelRoot");
             fallbackRoot.AddComponent<MicroChallengePanelPresenter>();
+        }
+
+        private static void EnsureFlagDebugPanelPresenter()
+        {
+            if (FindFirstObjectByType<FlagDebugPanelPresenter>() != null)
+            {
+                return;
+            }
+
+            var canvas = FindFirstObjectByType<Canvas>();
+            if (canvas != null)
+            {
+                canvas.gameObject.AddComponent<FlagDebugPanelPresenter>();
+                return;
+            }
+
+            var fallbackRoot = new GameObject("FlagDebugPanelRoot");
+            fallbackRoot.AddComponent<FlagDebugPanelPresenter>();
+        }
+
+        private static void EnsureSaveLoadPanelPresenter()
+        {
+            if (FindFirstObjectByType<SaveLoadPanelPresenter>() != null)
+            {
+                return;
+            }
+
+            var canvas = FindFirstObjectByType<Canvas>();
+            if (canvas != null)
+            {
+                canvas.gameObject.AddComponent<SaveLoadPanelPresenter>();
+                return;
+            }
+
+            var fallbackRoot = new GameObject("SaveLoadPanelRoot");
+            fallbackRoot.AddComponent<SaveLoadPanelPresenter>();
         }
 
         private void EnsureRealtimeTimeDriver()

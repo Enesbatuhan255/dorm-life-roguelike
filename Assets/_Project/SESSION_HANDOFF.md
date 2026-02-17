@@ -1,7 +1,171 @@
 # DormLifeRoguelike - Session Handoff
 
-Last updated: 2026-02-16
+Last updated: 2026-02-18
 Project root: `C:\DormLifeRoguelike\My project`
+
+## Quick Update (2026-02-18)
+- [x] Tuning Sprint V1 kicked off (cooldown/category/queue focus)
+  - Baseline simulation executed via:
+    - `DormLifeRoguelike.Tests.EditMode.BalanceSimulationTests.DebtEnforcement_RiskyProfile_ShowsHarsherOutcomesThanCautious`
+  - Baseline snapshot (40 runs/profile):
+    - Cautious: `HarshDebtRate=0.00`, endings `FailedExtendedYear:40`
+    - Balanced: `HarshDebtRate=0.35`, endings `FailedExtendedYear:26`, `ExpelledDebtSpiral:14`
+    - Risky: `HarshDebtRate=0.80`, endings `ExpelledDebtSpiral:32`, `FailedExtendedYear:8`
+  - Kickoff report added:
+    - `Assets/_Project/Reports/TUNING_SPRINT_V1_KICKOFF_2026-02-18.md`
+  - Iteration V1-A applied:
+    - Added `24h` per-event cooldown overrides for
+      - `EVT_MAJOR_DEBT_001`, `EVT_MAJOR_DEBT_002`, `EVT_MAJOR_GAMBLE_002`, `EVT_MAJOR_GAMBLE_003`
+    - Reduced weights:
+      - Debt: `1.20->1.10`, `1.25->1.15`
+      - Gamble: `0.85->0.80`, `0.80->0.75`
+    - Balance simulation test still passed with same baseline distribution.
+    - Next step: tune high-impact follow-up/choice branches (not only weighted pool cadence).
+  - Iteration V1-B applied (branch-level severity softening):
+    - Debt/Gamble critical choices softened and delayed follow-ups increased:
+      - `EVT_MAJOR_DEBT_001`, `EVT_MAJOR_DEBT_002`, `EVT_MAJOR_GAMBLE_002`, `EVT_MAJOR_GAMBLE_003`
+    - Gameplay gates after tuning:
+      - EditMode (`DormLifeRoguelike.Tests`): Passed 77/77
+      - PlayMode (`DormLifeRoguelike.Tests`): Passed 4/4
+    - BalanceSimulation summary stayed numerically unchanged.
+    - Next action: enrich simulation choice policy so branch-level content tuning is reflected in metrics.
+  - Iteration V1-C applied (simulation choice policy enrichment):
+    - `BalanceSimulationTests.SelectChoice` now includes event-specific debt/gamble branch heuristics + profile-weighted fallback scoring.
+    - Gameplay test suite remains passing.
+    - Baseline balance summary still unchanged; next lever should be simulation profile thresholds/day-plan behavior.
+- [x] Operational path-risk mitigation package prepared (no-space migration)
+  - Added migration script:
+    - `Tools/mcp/migrate_project_path_no_spaces.ps1`
+  - Added runbook:
+    - `Assets/_Project/Reports/PROJECT_PATH_MIGRATION_RUNBOOK.md`
+  - Dry-run validated successfully from current workspace.
+  - Note: project folder move is not executed yet in this session.
+- [x] Stat HUD polish pass completed in code
+  - `Assets/_Project/Scripts/UI/StatHudPresenter.cs`
+  - Added risk-aware, color-coded stat rendering:
+    - Hunger / Mental / Energy: `OK/LOW/CRITICAL`
+    - Money: `SAFE/TIGHT/DEBT/DEBT+`
+    - Academic: `GOOD/MID/RISK`
+    - Sleep Debt: `LOW/MID/HIGH`
+  - Added consistent numeric formatting and optional rich-text rendering toggle (`useRichText`).
+  - Validation:
+    - `DormLifeRoguelike.Tests.EditMode`: Passed 77/77
+    - `DormLifeRoguelike.Tests.PlayMode`: Passed 4/4
+- [x] Large UI presenter refactor pass (behavior-preserving)
+  - `ActionPanelPresenter` split into:
+    - `Assets/_Project/Scripts/UI/ActionPanelPresenter.cs`
+    - `Assets/_Project/Scripts/UI/ActionPanelPresenter.Ui.cs`
+    - `Assets/_Project/Scripts/UI/ActionPanelPresenter.Interactive.cs`
+  - `MicroChallengePanelPresenter` split into:
+    - `Assets/_Project/Scripts/UI/MicroChallengePanelPresenter.cs`
+    - `Assets/_Project/Scripts/UI/MicroChallengePanelPresenter.Ui.cs`
+  - No behavior change intended; only structure/maintainability improvement.
+  - Validation:
+    - `DormLifeRoguelike.Tests.EditMode`: Passed 77/77
+    - `DormLifeRoguelike.Tests.PlayMode`: Passed 4/4
+- [x] Save/Load runtime scope expanded (schema v2)
+  - `GameSnapshot` now persists:
+    - `EventManager` runtime state (current + pending event IDs)
+    - `EventScheduler` runtime state (cooldowns, queued-day markers, delayed follow-ups, repeat buffer)
+    - `GameOutcomeSystem` runtime state (resolved result + internal counters)
+  - `SnapshotMigrator.CurrentSchemaVersion` upgraded to `2` with backward-compatible default migration.
+  - `SaveLoadService` restore order updated to:
+    - time/stats/flags
+    - scheduler state
+    - event manager queue/current event
+    - outcome state
+- [x] Save/Load regression coverage expanded
+  - `SaveLoadServiceTests.SaveAndLoad_Roundtrip_RestoresSchedulerQueueAndOutcomeState`
+  - Validated delayed follow-up continues after load and resolved outcome state is preserved.
+- [x] PlayMode scheduler coverage expanded
+  - Added `Assets/_Project/Tests/PlayMode/EventSchedulerPlayModeCoverageTests.cs`
+  - New PlayMode cases:
+    - delayed choice follow-up enqueue timing
+    - same follow-up chain repeat processing for multiple roots
+    - context tag gating (`ExamWindow + MoneyLow`)
+  - Validation:
+    - `DormLifeRoguelike.Tests.PlayMode`: Passed 4/4
+    - `DormLifeRoguelike.Tests.EditMode`: Passed 76/76
+- [x] Stabilization baseline lock refreshed (gameplay scope)
+  - EditMode gate (`DormLifeRoguelike.Tests.EditMode`): Passed 76/76
+  - PlayMode gate (`DormLifeRoguelike.Tests.PlayMode`): Passed 1/1
+- [x] Gameplay acceptance gate clarified
+  - Official gameplay gate is namespace-scoped (`DormLifeRoguelike.Tests.*`)
+  - Full editor-wide failures in `com.IvanMurzak...` remain out-of-scope for gameplay acceptance
+- [x] Production EventData context/weight tuning pass applied
+  - Updated major events:
+    - `EVT_MAJOR_DEBT_001` weight -> `1.20`
+    - `EVT_MAJOR_DEBT_002` weight -> `1.25`
+    - `EVT_MAJOR_GAMBLE_002` weight -> `0.85`
+    - `EVT_MAJOR_GAMBLE_003` weight -> `0.80`
+  - Updated minor events:
+    - `EVT_MINOR_COST_002`: tags -> `ExamWindow + MoneyLow`, weight -> `0.95`
+    - `EVT_MINOR_COST_004`: tags -> `ExamWindow + MoneyLow`, weight -> `0.95`
+    - `EVT_MINOR_HEALTH_001`: tags -> `NotExamWindow + EnergyLow`, weight -> `0.90`
+    - `EVT_MINOR_SOC_001`: tags -> `MentalLow + NotExamWindow`, weight -> `0.90`
+    - `EVT_MINOR_TRANS_001`: tags -> `NotInflationDay + MoneyLow`, weight -> `0.95`
+    - `EVT_MINOR_STUDY_001`: weight -> `1.15`
+- [x] Event content reports regenerated
+  - `Assets/_Project/Reports/event_choice_coverage_report.csv`
+  - `Assets/_Project/Reports/event_chain_graph.csv`
+
+## Quick Update (2026-02-17)
+- [x] Event choice metadata model expanded
+  - `EventChoice.notes` and `EventChoice.flags` fields added
+  - New flag payload type: `EventFlagChange` (`AddNumeric`, `SetText`)
+- [x] Runtime flag systems integrated
+  - `FlagStateService` stores numeric/text flags from applied choices
+  - `FlagRuleService` applies daily stat effects from key flags (`debt_pressure`, `work_strain`, `burnout`, `kyk_risk_days`, `illegal_fine_pending`)
+  - `GameBootstrap` now registers `IFlagStateService` and `IFlagRuleService`
+- [x] Flag regression coverage
+  - `EventFlagStateTests` verifies choice flags are applied
+  - `FlagRuleServiceTests` verifies daily flag effects + counter decay
+- [x] Wave 2 choice-depth rollout completed (remaining 12 production events)
+  - Full production policy is now satisfied:
+    - Major>=3 choices: 16/16
+    - Minor>=2 choices: 12/12
+  - `event_choice_coverage_report.csv` now has 0 violations
+- [x] Wave 1 event choice-depth rollout completed (16 high-impact events)
+  - Major targets upgraded to >=3 choices, Minor targets upgraded to >=2 choices
+  - Updated IDs include Debt/KYK/Gamble core chain + selected crisis/minor events
+- [x] Content pipeline tooling added
+  - `EventChoiceCoverageValidator` (menu + CSV export)
+  - `EventChainGraphReport` (menu + CSV export)
+  - Reports generated:
+    - `Assets/_Project/Reports/event_choice_coverage_report.csv`
+    - `Assets/_Project/Reports/event_chain_graph.csv`
+- [x] New editor regression tests added
+  - `EventChoicePolicyTests` (Wave 1 policy gate)
+  - `EventChainIntegrityTests` (follow-up target existence)
+- [x] Current policy coverage snapshot
+  - Global Major>=3: 16/16
+  - Global Minor>=2: 12/12
+  - Remaining policy gaps: 0
+- [x] Event chain/follow-up repeat behavior completed in `EventScheduler`
+  - Same follow-up ID is now processed for each trigger (immediate and delayed paths)
+  - Repeated follow-ups that cannot enqueue immediately are buffered and drained after event completions/day change
+- [x] `IEventManager.EnqueueEvent` now returns `bool` success status
+- [x] Added chain repeat regression coverage in `EventSchedulerPolicyTests`
+  - `MultipleSources_SameImmediateFollowUp_ProcessesEachTrigger`
+  - `MultipleSources_SameDelayedFollowUp_ProcessesEachTrigger`
+- [x] Event category/context filter logic hardened in `EventScheduler`
+  - Stat-dependent tags now fail-closed when scheduler has no injected `IStatSystem`
+  - Time/calendar tags remain evaluable without `IStatSystem`
+- [x] Added policy regression coverage in `EventSchedulerPolicyTests`
+  - `MinorSelection_StatTaggedEvent_IsNotEligible_WhenSchedulerHasNoStatSystem`
+  - `MinorSelection_TimeTaggedEvent_WorksWithoutStatSystem`
+- [x] Validation snapshot after changes
+  - `DormLifeRoguelike.Tests.EditMode`: Passed 68/68
+- [x] Regression stabilization executed for `_Project` scope
+  - EditMode run #1 (`DormLifeRoguelike.Tests.EditMode`): Passed 61/61
+  - EditMode run #2 (`DormLifeRoguelike.Tests.EditMode`): Passed 61/61
+  - PlayMode smoke (`DormLifeRoguelike.Tests.PlayMode`): Passed 1/1
+- [x] Full EditMode reference run still reports 3 unrelated package/installer failures
+  - `com.IvanMurzak.Unity.MCP.Editor.Tests.TestToolGameObject.ModifyJson_SolarSystem_PlanetsArray`
+  - `com.IvanMurzak.Unity.MCP.Editor.Tests.TokenCounterTests.FormatTokenCount_1000OrMore_ReturnsKFormat`
+  - `com.IvanMurzak.Unity.MCP.Installer.Tests.ManifestInstallerTests.All`
+  - These are outside `_Project` gameplay scope and remain excluded from gameplay gate.
+- [x] Stability gate status: met (2 consecutive clean `_Project` EditMode runs)
 
 ## Quick Update (2026-02-16 Evening)
 - [x] MCP <-> Unity connectivity re-verified via `editor-application-get-state`
@@ -70,18 +234,17 @@ Project root: `C:\DormLifeRoguelike\My project`
 - [x] `EventData` category field added and exposed for cooldown/category-based logic
 
 ## In Progress
-- [ ] Run full EditMode regression once with stable runner (MCP was flaky; Unity batch blocked while editor instance is open)
+- [ ] Tune and polish category/context tagging on production EventData assets
 
 ## Next (Planned)
-- [ ] Add event category filters (time/stat context aware)
-- [ ] Add event chain/follow-up support
+- [ ] Tune cooldown/category/queue policy based on focused playtests
 - [ ] Polish UI/UX for Event panel and Stat HUD
 
 ## Where To Continue Tomorrow
-1. Close Unity Editor and run full EditMode regression (or run via stable MCP session) to capture fresh XML results.
-2. Verify new scheduler coverage includes 6 tests in `EventSchedulerPolicyTests` (category/event override scenarios).
-3. Add event category filters and chain/follow-up support.
-4. Tune cooldown/category/queue policy based on playtest.
+1. Tune production EventData `requiredContextTags` usage for better category balance in playtests.
+2. Add PlayMode coverage for chain repeat behavior and delayed follow-up flows.
+3. Tune cooldown/category/queue policy based on focused playtests.
+4. Start Save/Load architecture slice (snapshot schema + restore order).
 
 ## Important Changed Files
 - `Assets/_Project/Scripts/Core/GameBootstrap.cs`

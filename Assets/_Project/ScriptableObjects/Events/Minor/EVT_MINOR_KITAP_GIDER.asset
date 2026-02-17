@@ -13,22 +13,44 @@ MonoBehaviour:
   m_Name: EVT_MINOR_KITAP_GIDER
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MINOR_COST_004
-  title: Kaynak kitap ihtiyaci
-  description: Ders icin ek kaynak almak gerekti.
+  title: Kaynak Kitap Ihtiyaci
+  description: Derste herkes ayni kitabi aciyor. Sen PDF ariyorsun. Bir yerde kolay
+    olan yok.
   category: Minor
-  selectionWeight: 1
-  requiredContextTags:
-  - 6
+  selectionWeight: 0.95
+  requiredContextTags: 0600000000000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
   - text: Kitabi al
+    notes: 
     effects:
     - statType: 3
-      delta: -60
+      delta: -180
     - statType: 4
-      delta: 0.05
+      delta: 0.03
+    flags: []
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: PDF kovala (zaman gider)
+    notes: 
+    effects:
+    - statType: 2
+      delta: -1
+    - statType: 1
+      delta: -1
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

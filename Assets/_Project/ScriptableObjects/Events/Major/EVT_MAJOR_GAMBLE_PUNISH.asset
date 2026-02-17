@@ -13,22 +13,79 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_GAMBLE_PUNISH
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_GAMBLE_003
-  title: Gamble Delayed Punishment
-  description: Gecikmeli ceza bugun geldi.
+  title: 'Gecikmeli Ceza: Yasadisi Kumar'
+  description: Ceza mesaji geldi. Bugun. Tam da toparlamaya calisirken. Yasadisi
+    bahis/kumar nedeniyle idari islem. Bir anda borc, not, her seyin ustune yeni
+    bir yuk bindi.
   category: Major
-  selectionWeight: 1
-  requiredContextTags:
-  - 1
+  selectionWeight: 0.75
+  requiredContextTags: 01000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Zarari kapat
+  - text: Ode (hemen kapat)
+    notes: 
     effects:
     - statType: 3
-      delta: -260
+      delta: -650
     - statType: 1
-      delta: -8
+      delta: -5
+    flags:
+    - key: illegal_fine_paid
+      mode: 0
+      numericValue: 1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Ertele (faiz/ek yuk riski)
+    notes: 
+    effects:
+    - statType: 3
+      delta: 0
+    - statType: 1
+      delta: -3
+    flags:
+    - key: debt_pressure
+      mode: 0
+      numericValue: 1
+      textValue: 
+    - key: illegal_fine_pending
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Isi artir (cezayi calisarak kapat)
+    notes: 
+    effects:
+    - statType: 3
+      delta: 200
+    - statType: 1
+      delta: -5
+    - statType: 2
+      delta: -2
+    flags:
+    - key: work_strain
+      mode: 0
+      numericValue: 2
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

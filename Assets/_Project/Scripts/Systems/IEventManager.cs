@@ -14,7 +14,7 @@ namespace DormLifeRoguelike
 
         bool HasPendingEvents { get; }
 
-        void EnqueueEvent(EventData eventData);
+        bool EnqueueEvent(EventData eventData);
         void PublishSystemMessage(string message);
 
         IReadOnlyList<EventChoice> GetAvailableChoices(EventData eventData);

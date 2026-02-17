@@ -5,22 +5,37 @@ namespace DormLifeRoguelike
 {
     public sealed class GameOutcomeSystem : IGameOutcomeSystem, IDisposable
     {
+        private const string ForcedEndingFlagKey = "forced_ending_id";
+
         private readonly ITimeManager timeManager;
         private readonly IStatSystem statSystem;
         private readonly GameOutcomeConfig config;
         private readonly AcademicConfig academicConfig;
         private readonly EndingDatabase endingDatabase;
+        private readonly IFlagStateService flagStateService;
         private bool isDisposed;
         private int consecutiveCriticalAcademicDays;
         private int consecutiveDebtEnforcementDays;
 
         public GameOutcomeSystem(ITimeManager timeManager, IStatSystem statSystem, GameOutcomeConfig config, AcademicConfig academicConfig, EndingDatabase endingDatabase)
+            : this(timeManager, statSystem, config, academicConfig, endingDatabase, null)
+        {
+        }
+
+        public GameOutcomeSystem(
+            ITimeManager timeManager,
+            IStatSystem statSystem,
+            GameOutcomeConfig config,
+            AcademicConfig academicConfig,
+            EndingDatabase endingDatabase,
+            IFlagStateService flagStateService)
         {
             this.timeManager = timeManager ?? throw new ArgumentNullException(nameof(timeManager));
             this.statSystem = statSystem ?? throw new ArgumentNullException(nameof(statSystem));
             this.config = config ?? throw new ArgumentNullException(nameof(config));
             this.academicConfig = academicConfig ?? throw new ArgumentNullException(nameof(academicConfig));
             this.endingDatabase = endingDatabase ?? throw new ArgumentNullException(nameof(endingDatabase));
+            this.flagStateService = flagStateService;
             this.timeManager.OnDayChanged += HandleDayChanged;
 
             CurrentResult = GameOutcomeResult.None;
@@ -35,6 +50,72 @@ namespace DormLifeRoguelike
         public bool IsResolved => CurrentResult.IsResolved;
 
         public GameOutcomeResult CurrentResult { get; private set; }
+
+        public GameOutcomeSnapshot CaptureRuntimeSnapshot()
+        {
+            return new GameOutcomeSnapshot
+            {
+                isResolved = CurrentResult.IsResolved,
+                consecutiveCriticalAcademicDays = consecutiveCriticalAcademicDays,
+                consecutiveDebtEnforcementDays = consecutiveDebtEnforcementDays,
+                currentResult = new GameOutcomeResultSnapshot
+                {
+                    status = (int)CurrentResult.Status,
+                    title = CurrentResult.Title,
+                    message = CurrentResult.Message,
+                    resolvedOnDay = CurrentResult.ResolvedOnDay,
+                    score = CurrentResult.Score,
+                    scoreBand = CurrentResult.ScoreBand,
+                    endingId = (int)CurrentResult.EndingId,
+                    epilogTitle = CurrentResult.EpilogTitle,
+                    epilogBody = CurrentResult.EpilogBody,
+                    debtBand = (int)CurrentResult.DebtBand,
+                    employmentState = (int)CurrentResult.EmploymentState
+                }
+            };
+        }
+
+        public void RestoreRuntimeSnapshot(GameOutcomeSnapshot snapshot)
+        {
+            consecutiveCriticalAcademicDays = Mathf.Max(0, snapshot != null ? snapshot.consecutiveCriticalAcademicDays : 0);
+            consecutiveDebtEnforcementDays = Mathf.Max(0, snapshot != null ? snapshot.consecutiveDebtEnforcementDays : 0);
+
+            if (snapshot == null || snapshot.currentResult == null)
+            {
+                CurrentResult = GameOutcomeResult.None;
+                return;
+            }
+
+            var restoredStatus = (GameOutcomeStatus)Math.Clamp(snapshot.currentResult.status, (int)GameOutcomeStatus.None, (int)GameOutcomeStatus.Lose);
+            if (!snapshot.isResolved || restoredStatus == GameOutcomeStatus.None)
+            {
+                CurrentResult = GameOutcomeResult.None;
+                return;
+            }
+
+            var restoredEndingId = Enum.IsDefined(typeof(EndingId), snapshot.currentResult.endingId)
+                ? (EndingId)snapshot.currentResult.endingId
+                : EndingId.None;
+            var restoredDebtBand = Enum.IsDefined(typeof(DebtBand), snapshot.currentResult.debtBand)
+                ? (DebtBand)snapshot.currentResult.debtBand
+                : DebtBand.None;
+            var restoredEmploymentState = Enum.IsDefined(typeof(EmploymentState), snapshot.currentResult.employmentState)
+                ? (EmploymentState)snapshot.currentResult.employmentState
+                : EmploymentState.Unknown;
+
+            CurrentResult = new GameOutcomeResult(
+                restoredStatus,
+                snapshot.currentResult.title,
+                snapshot.currentResult.message,
+                snapshot.currentResult.resolvedOnDay,
+                snapshot.currentResult.score,
+                snapshot.currentResult.scoreBand,
+                restoredEndingId,
+                snapshot.currentResult.epilogTitle,
+                snapshot.currentResult.epilogBody,
+                restoredDebtBand,
+                restoredEmploymentState);
+        }
 
         public void Dispose()
         {
@@ -119,6 +200,7 @@ namespace DormLifeRoguelike
             }
 
             var band = ResolveScoreBand(score);
+            var forcedEndingId = TryResolveForcedEndingId();
             var ending = EndingResolver.Resolve(
                 isEarlyFailure,
                 status == GameOutcomeStatus.Win,
@@ -127,7 +209,8 @@ namespace DormLifeRoguelike
                 money,
                 config,
                 endingDatabase,
-                isDebtEnforcementTriggered);
+                isDebtEnforcementTriggered,
+                forcedEndingId);
             var message = $"{ending.EpilogBody}\nScore: {score}/100 ({band})";
 
             CurrentResult = new GameOutcomeResult(
@@ -144,6 +227,26 @@ namespace DormLifeRoguelike
                 ending.EmploymentState);
             OnOutcomeResolved?.Invoke(CurrentResult);
             OnGameEnded?.Invoke(CurrentResult);
+        }
+
+        private EndingId TryResolveForcedEndingId()
+        {
+            if (flagStateService == null)
+            {
+                return EndingId.None;
+            }
+
+            if (!flagStateService.TryGetText(ForcedEndingFlagKey, out var rawValue) || string.IsNullOrWhiteSpace(rawValue))
+            {
+                return EndingId.None;
+            }
+
+            if (!Enum.TryParse(rawValue.Trim(), true, out EndingId parsed) || parsed == EndingId.None)
+            {
+                return EndingId.None;
+            }
+
+            return parsed;
         }
 
         private int CalculateOutcomeScore()

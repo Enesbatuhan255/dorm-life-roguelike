@@ -13,24 +13,82 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_DEBT_NOTICE
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_DEBT_001
-  title: Debt Notice
-  description: Gecikmis odemeler toplandi.
+  title: 'Borc Bildirimi: Gecikmeler Toplandi'
+  description: 'SMS gece 02:13''te gelmis. Sabah telefonu acinca goruyorsun: Gecikmis
+    odemeler tek kalemde toplandi. Gozun bir yandan yurt kartina, bir yandan cuzdana
+    gidiyor. Bugun ne yaparsan yap, bu konu pesini birakmayacak.'
   category: Major
-  selectionWeight: 1
-  requiredContextTags:
-  - 0
-  followUpEventIds:
-  - EVT_MAJOR_DEBT_002
+  selectionWeight: 1.1
+  requiredContextTags: 00000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Taksit iste
+  - text: Taksit iste (kuyruga gir, gunun yarisi gider)
+    notes: Borcun baskisi azalir; gelecekte faiz daha dusuk.
     effects:
     - statType: 3
-      delta: -120
+      delta: -100
+    - statType: 2
+      delta: -2
     - statType: 1
       delta: -3
+    flags:
+    - key: debt_pressure
+      mode: 0
+      numericValue: -1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Bugun odeme yap (yemegi kis, gunu sik)
+    notes: 
+    effects:
+    - statType: 3
+      delta: -400
+    - statType: 0
+      delta: 1
+    - statType: 1
+      delta: -1
+    flags:
+    - key: debt_pressure
+      mode: 0
+      numericValue: -2
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Gormezden gel (bugunu kurtar)
+    notes: 
+    effects:
+    - statType: 1
+      delta: 0
+    - statType: 4
+      delta: -0.05
+    flags:
+    - key: debt_pressure
+      mode: 0
+      numericValue: 1
+      textValue: 
+    - key: debt_ignored
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds:
+    - EVT_MAJOR_DEBT_002
+    followUpDelayDays: 1
     timeAdvanceHours: 0

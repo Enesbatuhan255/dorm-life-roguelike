@@ -13,22 +13,74 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_FAMILY_EMERGENCY
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_FAMILY_001
-  title: Family Emergency Expense
-  description: Acil aile gideri cikti.
+  title: Acil Aile Gideri
+  description: 'Evden ariyorlar. Ses normal ama kelimeler agir: Bir sey cikti, kucuk
+    degil. Telefonu kapatinca odanin sesi buyuyor. Senin paran da rahatin da aslinda
+    senin degilmis gibi.'
   category: Major
   selectionWeight: 1
-  requiredContextTags:
-  - 7
+  requiredContextTags: 07000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Destek ol
+  - text: Destek ol (gonder)
+    notes: 
     effects:
     - statType: 3
-      delta: -140
+      delta: -500
     - statType: 1
-      delta: -3
+      delta: -2
+    flags:
+    - key: family_pressure
+      mode: 0
+      numericValue: 1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Az gonder (ben de zor durumdayim)
+    notes: 
+    effects:
+    - statType: 3
+      delta: -250
+    - statType: 1
+      delta: -1
+    flags:
+    - key: family_pressure
+      mode: 0
+      numericValue: 0
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Gonderme (kendini koru)
+    notes: 
+    effects:
+    - statType: 1
+      delta: -3
+    - statType: 4
+      delta: -0.02
+    flags:
+    - key: guilt
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds:
+    - EVT_MAJOR_ACADEMIC_001
+    followUpDelayDays: 1
     timeAdvanceHours: 0

@@ -13,22 +13,40 @@ MonoBehaviour:
   m_Name: EVT_MINOR_AILE_DESTEGI
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MINOR_AILE_001
-  title: Aileden destek mesaji
-  description: Aile moral verdi, bir miktar destek yolladi.
+  title: Aileden Mesaj
+  description: Nasilsin? Ac kalma. Kendine dikkat et. Mesaj kisa ama gogsunde bir
+    agirlik birakiyor.
   category: Minor
   selectionWeight: 1
-  requiredContextTags:
-  - 0
+  requiredContextTags: 00000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Tesekkur et
+  - text: Tesekkur et (iyi hisset)
+    notes: 
     effects:
-    - statType: 3
-      delta: 300
     - statType: 1
       delta: 2
+    flags: []
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Cevap yazma (mesafe)
+    notes: 
+    effects:
+    - statType: 1
+      delta: -1
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

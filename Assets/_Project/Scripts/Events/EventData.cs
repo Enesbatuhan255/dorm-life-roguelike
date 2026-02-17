@@ -17,7 +17,13 @@ namespace DormLifeRoguelike
         NotInflationDay,
         KykPayday,
         FirstSemester,
-        SecondSemester
+        SecondSemester,
+        DebtPressureHigh,
+        WorkStrainHigh,
+        BurnoutHigh,
+        KykRiskDaysHigh,
+        IllegalFinePending,
+        KykStatusCut
     }
 
     [CreateAssetMenu(fileName = "EventData", menuName = "DormLifeRoguelike/Event Data")]

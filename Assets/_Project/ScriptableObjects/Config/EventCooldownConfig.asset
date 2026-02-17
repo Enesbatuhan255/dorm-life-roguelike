@@ -14,4 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventCooldownConfig
   defaultCooldownHours: 6
   perCategoryOverrides: []
-  perEventOverrides: []
+  perEventOverrides:
+  - eventId: EVT_MAJOR_DEBT_001
+    cooldownHours: 24
+  - eventId: EVT_MAJOR_DEBT_002
+    cooldownHours: 24
+  - eventId: EVT_MAJOR_GAMBLE_002
+    cooldownHours: 24
+  - eventId: EVT_MAJOR_GAMBLE_003
+    cooldownHours: 24

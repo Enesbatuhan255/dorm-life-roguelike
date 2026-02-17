@@ -13,26 +13,75 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_GAMBLE_CHASE
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_GAMBLE_002
-  title: Gamble Chase Loss
-  description: Kaybi kovalamak riski buyuttu.
+  title: Kayip Kovalamak
+  description: 'Kaybettin. Kayip kucuk degil. Kafanin icinde tek bir cumle donuyor:
+    Bir tur daha, geri alirim. Bu karar paradan once seni ilgilendiriyor.'
   category: Major
-  selectionWeight: 1
-  requiredContextTags:
-  - 0
-  followUpEventIds:
-  - EVT_MAJOR_GAMBLE_003
-  followUpDelayDays: 1
+  selectionWeight: 0.8
+  requiredContextTags: 00000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Son bir tur
+  - text: Son bir tur (risk)
+    notes: 
     effects:
     - statType: 3
-      delta: -180
+      delta: 400
     - statType: 1
-      delta: -6
+      delta: -3
+    - statType: 2
+      delta: -1
+    flags:
+    - key: illegal_gamble_triggered
+      mode: 0
+      numericValue: 1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds:
+    - EVT_MAJOR_GAMBLE_003
+    followUpDelayDays: 2
+    timeAdvanceHours: 0
+  - text: Kes (zarari kabul et)
+    notes: 
+    effects:
+    - statType: 1
+      delta: -2
+    - statType: 3
+      delta: 0
+    flags:
+    - key: gamble_stop
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Birini ara (borc iste)
+    notes: 
+    effects:
+    - statType: 3
+      delta: 200
+    - statType: 1
+      delta: -3
+    flags:
+    - key: debt_pressure
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
     followUpDelayDays: 0
     timeAdvanceHours: 0

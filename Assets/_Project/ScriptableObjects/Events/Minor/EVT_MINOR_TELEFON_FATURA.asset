@@ -13,22 +13,48 @@ MonoBehaviour:
   m_Name: EVT_MINOR_TELEFON_FATURA
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MINOR_COST_003
-  title: Telefon faturasi surprizi
-  description: Beklenenden yuksek fatura geldi.
+  title: Telefon Faturasi Surprizi
+  description: Paket yetmemis. Asim yazmis. Bu ay da boyle oldu.
   category: Minor
   selectionWeight: 1
-  requiredContextTags:
-  - 0
+  requiredContextTags: 00000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Paketi dusur
+  - text: Paketi dusur (gelecek ay daha az rahat)
+    notes: 
     effects:
     - statType: 3
-      delta: -35
+      delta: -80
     - statType: 1
       delta: -1
+    flags:
+    - key: comfort
+      mode: 0
+      numericValue: -1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Ode gec (gunu kurtar)
+    notes: 
+    effects:
+    - statType: 3
+      delta: -120
+    - statType: 1
+      delta: 0
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds:
+    - EVT_MAJOR_DEBT_001
+    followUpDelayDays: 2
     timeAdvanceHours: 0

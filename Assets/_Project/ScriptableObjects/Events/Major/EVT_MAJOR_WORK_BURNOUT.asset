@@ -13,22 +13,80 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_WORK_BURNOUT
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_WORK_001
-  title: Work Burnout
-  description: Yogun calisma zihinsel yuku artirdi.
+  title: 'Is Tukenisi: Vardiya Ustune Vardiya'
+  description: 'Patron mesaj atmis: Bugun de gelir misin? Cevap yazmadan once elin
+    titriyor. Para lazim, ama kafanin ici zaten gurultu. Bir vardiya daha, birkac
+    gunu yakabilir.'
   category: Major
   selectionWeight: 1
-  requiredContextTags:
-  - 2
+  requiredContextTags: 02000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Mola ver
+  - text: Mola ver (hayir de, mentalini koru)
+    notes: 
     effects:
     - statType: 1
-      delta: -8
-    - statType: 2
-      delta: -6
+      delta: 2
+    - statType: 3
+      delta: 0
+    - statType: 4
+      delta: 0.03
+    flags:
+    - key: work_reputation
+      mode: 0
+      numericValue: -1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Git (parayi al)
+    notes: 
+    effects:
+    - statType: 3
+      delta: 220
+    - statType: 2
+      delta: -2
+    - statType: 1
+      delta: -4
+    flags:
+    - key: work_strain
+      mode: 0
+      numericValue: 2
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds:
+    - EVT_MAJOR_SLEEP_001
+    followUpDelayDays: 1
+    timeAdvanceHours: 0
+  - text: Git ama erken cik (riskli)
+    notes: 
+    effects:
+    - statType: 3
+      delta: 120
+    - statType: 2
+      delta: -1
+    - statType: 1
+      delta: -2
+    flags:
+    - key: work_reputation
+      mode: 0
+      numericValue: -2
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

@@ -13,22 +13,46 @@ MonoBehaviour:
   m_Name: EVT_MINOR_FOTOKOPI
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MINOR_COST_002
-  title: Fotokopi masrafi
-  description: Cikti ve fotokopi masrafi birikti.
+  title: Fotokopi Masrafi
+  description: Hoca cikti sart dedi. Fotokopicinin onunde sira var. Kucuk para, buyuk
+    birikim.
   category: Minor
-  selectionWeight: 1
-  requiredContextTags:
-  - 6
+  selectionWeight: 0.95
+  requiredContextTags: 0600000000000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
   - text: Mecbur ode
+    notes: 
     effects:
     - statType: 3
-      delta: -20
-    - statType: 2
-      delta: -1
+      delta: -35
+    flags: []
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Arkadastan al (utanma)
+    notes: 
+    effects:
+    - statType: 1
+      delta: -1
+    - statType: 3
+      delta: 0
+    flags:
+    - key: social_debt
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

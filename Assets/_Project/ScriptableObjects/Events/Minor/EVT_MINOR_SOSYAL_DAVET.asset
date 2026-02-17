@@ -13,22 +13,44 @@ MonoBehaviour:
   m_Name: EVT_MINOR_SOSYAL_DAVET
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MINOR_SOC_001
-  title: Sosyal davet
-  description: Kisa bir mola daveti geldi.
+  title: Sosyal Davet
+  description: Bir cay icelim diyorlar. Cok bir sey degil gibi. Ama bazen kucuk mola
+    buyuk fark yaratir.
   category: Minor
-  selectionWeight: 1
-  requiredContextTags:
-  - 2
+  selectionWeight: 0.9
+  requiredContextTags: 0200000007000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Katil
+  - text: Katil (mental toparla)
+    notes: 
     effects:
     - statType: 1
       delta: 3
     - statType: 2
-      delta: -2
+      delta: -1
+    flags: []
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Gitme (zaman kazan)
+    notes: 
+    effects:
+    - statType: 4
+      delta: 0.02
+    - statType: 1
+      delta: -1
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

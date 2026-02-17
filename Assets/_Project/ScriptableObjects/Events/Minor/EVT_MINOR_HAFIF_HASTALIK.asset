@@ -13,22 +13,45 @@ MonoBehaviour:
   m_Name: EVT_MINOR_HAFIF_HASTALIK
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MINOR_HEALTH_001
-  title: Hafif hastalik
-  description: Gunluk tempo dustu.
+  title: Hafif Hastalik
+  description: Bogaz yaniyor. Usutmus gibisin. Bugun her sey daha pahali geliyor.
   category: Minor
-  selectionWeight: 1
-  requiredContextTags:
-  - 7
+  selectionWeight: 0.9
+  requiredContextTags: 0700000003000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
   - text: Dinlenerek atlat
+    notes: 
     effects:
     - statType: 2
-      delta: -4
+      delta: 1
     - statType: 1
-      delta: -2
+      delta: 1
+    - statType: 4
+      delta: -0.03
+    flags: []
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Ilacla gecistir
+    notes: 
+    effects:
+    - statType: 3
+      delta: -40
+    - statType: 1
+      delta: -1
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

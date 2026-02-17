@@ -13,22 +13,44 @@ MonoBehaviour:
   m_Name: EVT_MINOR_UYKUSUZ_GECE
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MINOR_SLEEP_001
-  title: Uykusuz gece
-  description: Kesintili uyku nedeniyle gun agir basladi.
+  title: Uykusuz Gece
+  description: Ranzanin gicirtisi, kapi sesi, biri telefonla konusuyor. Uyku tam
+    gelmisken gidiyor.
   category: Minor
   selectionWeight: 1
-  requiredContextTags:
-  - 3
+  requiredContextTags: 03000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
   - text: Kahveyle toparlan
+    notes: 
     effects:
+    - statType: 3
+      delta: -25
     - statType: 2
-      delta: -5
+      delta: 1
     - statType: 1
       delta: -1
+    flags: []
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Sessiz kal (idare et)
+    notes: 
+    effects:
+    - statType: 2
+      delta: -1
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

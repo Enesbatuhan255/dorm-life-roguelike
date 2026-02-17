@@ -44,10 +44,11 @@ namespace DormLifeRoguelike
             float money,
             GameOutcomeConfig config,
             EndingDatabase endingDatabase,
-            bool isDebtEnforcementTriggered = false)
+            bool isDebtEnforcementTriggered = false,
+            EndingId forcedEndingId = EndingId.None)
         {
             var debtBand = ResolveDebtBand(money, config);
-            var endingId = ResolveEndingId(isEarlyFailure, isAcademicPass, mental, energy, money, config, isDebtEnforcementTriggered);
+            var endingId = ResolveEndingId(isEarlyFailure, isAcademicPass, mental, energy, money, config, isDebtEnforcementTriggered, forcedEndingId);
             var employmentState = ResolveEmploymentState(endingId);
 
             if (endingDatabase != null && endingDatabase.TryGetEntry(endingId, out var entry))
@@ -84,8 +85,14 @@ namespace DormLifeRoguelike
             float energy,
             float money,
             GameOutcomeConfig config,
-            bool isDebtEnforcementTriggered)
+            bool isDebtEnforcementTriggered,
+            EndingId forcedEndingId)
         {
+            if (forcedEndingId != EndingId.None)
+            {
+                return forcedEndingId;
+            }
+
             if (isDebtEnforcementTriggered)
             {
                 return EndingId.DebtEnforcementPrison;

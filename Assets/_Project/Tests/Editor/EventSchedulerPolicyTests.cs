@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Reflection;
 using DormLifeRoguelike;
 using NUnit.Framework;
 using UnityEngine;
@@ -7,6 +8,7 @@ namespace DormLifeRoguelike.Tests.EditMode
 {
     public sealed class EventSchedulerPolicyTests
     {
+        private const BindingFlags InstancePrivate = BindingFlags.Instance | BindingFlags.NonPublic;
         private readonly List<EventData> createdEvents = new List<EventData>();
 
         [TearDown]
@@ -189,6 +191,147 @@ namespace DormLifeRoguelike.Tests.EditMode
         }
 
         [Test]
+        public void MinorSelection_StatTaggedEvent_IsNotEligible_WhenSchedulerHasNoStatSystem()
+        {
+            var time = new TimeManager();
+            var stats = new StatSystem();
+            stats.SetBaseValue(StatType.Money, -500f);
+            var manager = new EventManager(stats, time);
+            var moneyLowMinor = Track(EventTestFactory.CreateEvent(
+                "EVT_MINOR_MONEY_LOW_NO_STATS",
+                true,
+                selectionWeight: 100f,
+                category: "Minor",
+                requiredContextTags: new[] { EventContextTag.MoneyLow }));
+            var genericMinor = Track(EventTestFactory.CreateEvent(
+                "EVT_MINOR_GENERIC_NO_STATS",
+                true,
+                selectionWeight: 1f,
+                category: "Minor"));
+
+            using var scheduler = new EventScheduler(
+                time,
+                manager,
+                new[] { moneyLowMinor, genericMinor },
+                checkIntervalHours: 1,
+                cooldownHours: 0);
+
+            var picked = scheduler.PickMinorEventForDay(time.Day, time.Hour);
+            Assert.That(picked, Is.SameAs(genericMinor));
+        }
+
+        [Test]
+        public void MinorSelection_TimeTaggedEvent_WorksWithoutStatSystem()
+        {
+            var time = new TimeManager();
+            var manager = new EventManager(new StatSystem(), time);
+            var examTaggedMinor = Track(EventTestFactory.CreateEvent(
+                "EVT_MINOR_EXAM_NO_STATS",
+                true,
+                selectionWeight: 100f,
+                category: "Minor",
+                requiredContextTags: new[] { EventContextTag.ExamWindow }));
+            var genericMinor = Track(EventTestFactory.CreateEvent(
+                "EVT_MINOR_NON_EXAM_NO_STATS",
+                true,
+                selectionWeight: 1f,
+                category: "Minor"));
+
+            using var scheduler = new EventScheduler(
+                time,
+                manager,
+                new[] { examTaggedMinor, genericMinor },
+                checkIntervalHours: 1,
+                cooldownHours: 0);
+
+            var normalDayPick = scheduler.PickMinorEventForDay(10, 8);
+            Assert.That(normalDayPick, Is.SameAs(genericMinor));
+
+            var examDayPick = scheduler.PickMinorEventForDay(16, 8);
+            Assert.That(examDayPick, Is.SameAs(examTaggedMinor));
+        }
+
+        [Test]
+        public void MinorSelection_DebtPressureTag_OnlyEligibleWhenPressureHigh()
+        {
+            var time = new TimeManager();
+            var stats = new StatSystem();
+            var flags = new FlagStateService();
+            var manager = new EventManager(stats, time, flags);
+            var debtTaggedMinor = Track(EventTestFactory.CreateEvent(
+                "EVT_MINOR_DEBT_TAGGED",
+                true,
+                selectionWeight: 100f,
+                category: "Minor",
+                requiredContextTags: new[] { EventContextTag.DebtPressureHigh }));
+            var genericMinor = Track(EventTestFactory.CreateEvent(
+                "EVT_MINOR_DEBT_GENERIC",
+                true,
+                selectionWeight: 0f,
+                category: "Minor"));
+            var cooldownConfig = ScriptableObject.CreateInstance<EventCooldownConfig>();
+            cooldownConfig.SetRuntimeDefaults(0);
+
+            using var scheduler = new EventScheduler(
+                time,
+                manager,
+                stats,
+                new[] { debtTaggedMinor, genericMinor },
+                checkIntervalHours: 1,
+                cooldownConfig: cooldownConfig,
+                flagStateService: flags);
+
+            var beforePressure = scheduler.PickMinorEventForDay(time.Day, time.Hour);
+            Assert.That(beforePressure, Is.SameAs(genericMinor));
+
+            flags.ApplyChanges(new[] { CreateNumericFlag("debt_pressure", 3f) });
+            var afterPressure = scheduler.PickMinorEventForDay(time.Day, time.Hour);
+            Assert.That(afterPressure, Is.SameAs(debtTaggedMinor));
+
+            Object.DestroyImmediate(cooldownConfig);
+        }
+
+        [Test]
+        public void MinorSelection_KykStatusCutTag_OnlyEligibleWhenStatusCut()
+        {
+            var time = new TimeManager();
+            var stats = new StatSystem();
+            var flags = new FlagStateService();
+            var manager = new EventManager(stats, time, flags);
+            var cutTaggedMinor = Track(EventTestFactory.CreateEvent(
+                "EVT_MINOR_KYK_CUT_TAGGED",
+                true,
+                selectionWeight: 100f,
+                category: "Minor",
+                requiredContextTags: new[] { EventContextTag.KykStatusCut }));
+            var genericMinor = Track(EventTestFactory.CreateEvent(
+                "EVT_MINOR_KYK_GENERIC",
+                true,
+                selectionWeight: 0f,
+                category: "Minor"));
+            var cooldownConfig = ScriptableObject.CreateInstance<EventCooldownConfig>();
+            cooldownConfig.SetRuntimeDefaults(0);
+
+            using var scheduler = new EventScheduler(
+                time,
+                manager,
+                stats,
+                new[] { cutTaggedMinor, genericMinor },
+                checkIntervalHours: 1,
+                cooldownConfig: cooldownConfig,
+                flagStateService: flags);
+
+            var beforeCut = scheduler.PickMinorEventForDay(time.Day, time.Hour);
+            Assert.That(beforeCut, Is.SameAs(genericMinor));
+
+            flags.ApplyChanges(new[] { CreateTextFlag("kyk_status", "Cut") });
+            var afterCut = scheduler.PickMinorEventForDay(time.Day, time.Hour);
+            Assert.That(afterCut, Is.SameAs(cutTaggedMinor));
+
+            Object.DestroyImmediate(cooldownConfig);
+        }
+
+        [Test]
         public void CompletedEvent_EnqueuesConfiguredFollowUp()
         {
             var time = new TimeManager();
@@ -311,7 +454,7 @@ namespace DormLifeRoguelike.Tests.EditMode
             manager.TryApplyChoice(manager.CurrentEvent, 0, out _);
             Assert.That(manager.CurrentEvent, Is.Null);
             Assert.That(manager.HasPendingEvents, Is.False);
-            Assert.That(outcomes, Has.Some.Contains("hemen görünmeyebilir"));
+            Assert.That(outcomes, Has.Some.Contains("hemen etkisini gostermeyebilir"));
 
             time.AdvanceTime(24);
             Assert.That(manager.CurrentEvent, Is.Null);
@@ -371,6 +514,131 @@ namespace DormLifeRoguelike.Tests.EditMode
         }
 
         [Test]
+        public void MultipleSources_SameImmediateFollowUp_ProcessesEachTrigger()
+        {
+            var time = new TimeManager();
+            var stats = new StatSystem();
+            var manager = new EventManager(stats, time);
+            var completedIds = new List<string>();
+            manager.OnEventCompleted += e => completedIds.Add(e.EventId);
+
+            var repeatedFollowUp = Track(EventTestFactory.CreateEvent("EVT_REPEAT_IMMEDIATE", true, category: "Major"));
+            var rootA = Track(EventTestFactory.CreateEvent(
+                "EVT_ROOT_A",
+                true,
+                selectionWeight: 100f,
+                category: "Minor",
+                followUpEventIds: new[] { "EVT_REPEAT_IMMEDIATE" }));
+            var rootB = Track(EventTestFactory.CreateEvent(
+                "EVT_ROOT_B",
+                true,
+                selectionWeight: 0f,
+                category: "Minor",
+                followUpEventIds: new[] { "EVT_REPEAT_IMMEDIATE" }));
+            var cooldownConfig = ScriptableObject.CreateInstance<EventCooldownConfig>();
+            cooldownConfig.SetRuntimeDefaults(0);
+
+            using var scheduler = new EventScheduler(
+                time,
+                manager,
+                stats,
+                new[] { rootA, rootB, repeatedFollowUp },
+                checkIntervalHours: 1,
+                cooldownConfig: cooldownConfig);
+
+            manager.EnqueueEvent(rootB);
+
+            while (manager.CurrentEvent != null)
+            {
+                manager.TryApplyChoice(manager.CurrentEvent, 0, out _);
+            }
+
+            Assert.That(completedIds.FindAll(id => id == "EVT_REPEAT_IMMEDIATE").Count, Is.EqualTo(2));
+
+            Object.DestroyImmediate(cooldownConfig);
+        }
+
+        [Test]
+        public void MultipleSources_SameDelayedFollowUp_ProcessesEachTrigger()
+        {
+            var time = new TimeManager();
+            var stats = new StatSystem();
+            var manager = new EventManager(stats, time);
+            var completedIds = new List<string>();
+            manager.OnEventCompleted += e => completedIds.Add(e.EventId);
+
+            var repeatedFollowUp = Track(EventTestFactory.CreateEvent("EVT_REPEAT_DELAYED", true, category: "Major"));
+            var rootA = Track(EventTestFactory.CreateEvent(
+                "EVT_ROOT_DELAY_A",
+                true,
+                selectionWeight: 100f,
+                category: "Minor",
+                followUpEventIds: new[] { "EVT_REPEAT_DELAYED" },
+                followUpDelayDays: 1));
+            var rootB = Track(EventTestFactory.CreateEvent(
+                "EVT_ROOT_DELAY_B",
+                true,
+                selectionWeight: 0f,
+                category: "Minor",
+                followUpEventIds: new[] { "EVT_REPEAT_DELAYED" },
+                followUpDelayDays: 1));
+            var cooldownConfig = ScriptableObject.CreateInstance<EventCooldownConfig>();
+            cooldownConfig.SetRuntimeDefaults(0);
+
+            using var scheduler = new EventScheduler(
+                time,
+                manager,
+                stats,
+                new[] { rootA, rootB, repeatedFollowUp },
+                checkIntervalHours: 1,
+                cooldownConfig: cooldownConfig);
+
+            manager.EnqueueEvent(rootB);
+
+            while (manager.CurrentEvent != null)
+            {
+                manager.TryApplyChoice(manager.CurrentEvent, 0, out _);
+            }
+
+            time.AdvanceTime(24);
+
+            while (manager.CurrentEvent != null)
+            {
+                manager.TryApplyChoice(manager.CurrentEvent, 0, out _);
+            }
+
+            Assert.That(completedIds.FindAll(id => id == "EVT_REPEAT_DELAYED").Count, Is.EqualTo(2));
+
+            Object.DestroyImmediate(cooldownConfig);
+        }
+
+        private static EventFlagChange CreateNumericFlag(string key, float value)
+        {
+            var flag = new EventFlagChange();
+            SetField(flag, "key", key);
+            SetField(flag, "mode", EventFlagChangeMode.AddNumeric);
+            SetField(flag, "numericValue", value);
+            SetField(flag, "textValue", string.Empty);
+            return flag;
+        }
+
+        private static EventFlagChange CreateTextFlag(string key, string value)
+        {
+            var flag = new EventFlagChange();
+            SetField(flag, "key", key);
+            SetField(flag, "mode", EventFlagChangeMode.SetText);
+            SetField(flag, "numericValue", 0f);
+            SetField(flag, "textValue", value);
+            return flag;
+        }
+
+        private static void SetField<T>(object target, string fieldName, T value)
+        {
+            var field = target.GetType().GetField(fieldName, InstancePrivate);
+            field.SetValue(target, value);
+        }
+
+        [Test]
         public void CompletedEvent_MissingFollowUp_DoesNotBreakFlow()
         {
             var time = new TimeManager();
@@ -401,3 +669,4 @@ namespace DormLifeRoguelike.Tests.EditMode
         }
     }
 }
+

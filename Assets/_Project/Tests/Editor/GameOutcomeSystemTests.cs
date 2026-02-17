@@ -141,6 +141,31 @@ namespace DormLifeRoguelike.Tests.EditMode
             Assert.That(outcome.IsResolved, Is.False);
         }
 
+        [Test]
+        public void ForcedEndingFlag_WhenValid_OverridesDefaultResolverEnding()
+        {
+            var time = new TimeManager();
+            var stats = new StatSystem();
+            stats.SetBaseValue(StatType.Academic, 3.8f);
+            stats.SetBaseValue(StatType.Mental, 85f);
+            stats.SetBaseValue(StatType.Energy, 80f);
+            stats.SetBaseValue(StatType.Money, 900f);
+
+            var flags = new FlagStateService();
+            flags.ReplaceAll(
+                new Dictionary<string, float>(),
+                new Dictionary<string, string>
+                {
+                    { "forced_ending_id", "FailedDebtTrap" }
+                });
+
+            using var outcome = new GameOutcomeSystem(time, stats, outcomeConfig, academicConfig, endingDatabase, flags);
+            time.AdvanceTime(24 * 72);
+
+            Assert.That(outcome.IsResolved, Is.True);
+            Assert.That(outcome.CurrentResult.EndingId, Is.EqualTo(EndingId.FailedDebtTrap));
+        }
+
         private static EndingDatabase CreatePopulatedEndingDatabase()
         {
             var database = ScriptableObject.CreateInstance<EndingDatabase>();

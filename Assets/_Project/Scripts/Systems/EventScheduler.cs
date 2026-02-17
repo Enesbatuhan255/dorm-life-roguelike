@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DormLifeRoguelike
 {
-    public sealed class EventScheduler : IEventScheduler, IDisposable
+    public sealed partial class EventScheduler : IEventScheduler, IDisposable
     {
         private sealed class ScheduledFollowUp
         {
@@ -18,6 +18,7 @@ namespace DormLifeRoguelike
         private readonly ITimeManager timeManager;
         private readonly IEventManager eventManager;
         private readonly IStatSystem statSystem;
+        private readonly IFlagStateService flagStateService;
         private readonly List<EventData> minorEventPool = new List<EventData>();
         private readonly List<EventData> majorEventPool = new List<EventData>();
         private readonly List<EventData> eligibleEvents = new List<EventData>();
@@ -26,7 +27,7 @@ namespace DormLifeRoguelike
         private readonly Dictionary<string, EventData> eventsById = new Dictionary<string, EventData>();
         private readonly HashSet<string> missingFollowUpWarnings = new HashSet<string>();
         private readonly List<ScheduledFollowUp> scheduledFollowUps = new List<ScheduledFollowUp>();
-        private readonly HashSet<string> scheduledFollowUpKeys = new HashSet<string>();
+        private readonly Dictionary<string, int> pendingFollowUpRepeatCounts = new Dictionary<string, int>();
         private readonly EventCooldownConfig cooldownConfig;
 
         private bool isDisposed;
@@ -45,7 +46,8 @@ namespace DormLifeRoguelike
                 null,
                 events,
                 checkIntervalHours,
-                EventCooldownConfig.CreateRuntimeDefault(cooldownHours))
+                EventCooldownConfig.CreateRuntimeDefault(cooldownHours),
+                null)
         {
         }
 
@@ -61,7 +63,8 @@ namespace DormLifeRoguelike
                 null,
                 events,
                 checkIntervalHours,
-                cooldownConfig)
+                cooldownConfig,
+                null)
         {
         }
 
@@ -71,17 +74,20 @@ namespace DormLifeRoguelike
             IStatSystem statSystem,
             IEnumerable<EventData> events,
             int checkIntervalHours,
-            EventCooldownConfig cooldownConfig)
+            EventCooldownConfig cooldownConfig,
+            IFlagStateService flagStateService = null)
         {
             this.timeManager = timeManager ?? throw new ArgumentNullException(nameof(timeManager));
             this.eventManager = eventManager ?? throw new ArgumentNullException(nameof(eventManager));
             this.statSystem = statSystem;
             this.cooldownConfig = cooldownConfig ?? throw new ArgumentNullException(nameof(cooldownConfig));
+            this.flagStateService = flagStateService;
 
             PopulatePools(events);
 
             timeManager.OnDayChanged += HandleDayChanged;
             eventManager.OnChoiceApplied += HandleChoiceApplied;
+            eventManager.OnEventCompleted += HandleEventCompleted;
             TryQueueMinorForCurrentDay();
         }
 
@@ -179,11 +185,13 @@ namespace DormLifeRoguelike
             isDisposed = true;
             timeManager.OnDayChanged -= HandleDayChanged;
             eventManager.OnChoiceApplied -= HandleChoiceApplied;
+            eventManager.OnEventCompleted -= HandleEventCompleted;
         }
 
         private void HandleDayChanged(int _)
         {
             EnqueueDueFollowUps(timeManager.Day);
+            DrainBufferedFollowUps();
             TryQueueMinorForCurrentDay();
         }
 
@@ -274,159 +282,31 @@ namespace DormLifeRoguelike
 
         private void EnqueueWithCooldown(EventData eventData)
         {
+            TryEnqueueWithCooldown(eventData);
+        }
+
+        private bool TryEnqueueWithCooldown(EventData eventData)
+        {
+            if (eventData == null)
+            {
+                return false;
+            }
+
             var nowAbsHour = GetAbsoluteHour(timeManager.Day, timeManager.Hour);
-            eventManager.EnqueueEvent(eventData);
+            var enqueued = eventManager.EnqueueEvent(eventData);
+            if (!enqueued)
+            {
+                return false;
+            }
+
             var cooldownHours = cooldownConfig.GetCooldownHours(eventData);
             eventCooldownUntilHour[GetEventKey(eventData)] = nowAbsHour + cooldownHours;
+            return true;
         }
 
-        private void HandleChoiceApplied(EventData completedEvent, EventChoice appliedChoice)
+        private void HandleEventCompleted(EventData _)
         {
-            if (completedEvent == null)
-            {
-                return;
-            }
-
-            var choiceFollowUps = appliedChoice?.FollowUpEventIds;
-            if (choiceFollowUps != null && choiceFollowUps.Count > 0)
-            {
-                EnqueueOrScheduleFollowUps(completedEvent, choiceFollowUps, appliedChoice.FollowUpDelayDays);
-                return;
-            }
-
-            var eventFollowUps = completedEvent.FollowUpEventIds;
-            if (eventFollowUps != null && eventFollowUps.Count > 0)
-            {
-                EnqueueOrScheduleFollowUps(completedEvent, eventFollowUps, completedEvent.FollowUpDelayDays);
-            }
-        }
-
-        private void EnqueueOrScheduleFollowUps(EventData completedEvent, IReadOnlyList<string> followUpIds, int delayDays)
-        {
-            var normalizedDelayDays = Math.Max(0, delayDays);
-            if (normalizedDelayDays == 0)
-            {
-                EnqueueFollowUps(completedEvent, followUpIds);
-                return;
-            }
-
-            ScheduleFollowUps(completedEvent, followUpIds, normalizedDelayDays);
-        }
-
-        private void ScheduleFollowUps(EventData completedEvent, IReadOnlyList<string> followUpIds, int delayDays)
-        {
-            if (completedEvent == null || followUpIds == null || followUpIds.Count == 0)
-            {
-                return;
-            }
-
-            var triggerDay = Math.Max(1, timeManager.Day + Math.Max(0, delayDays));
-            var completedEventId = NormalizeId(completedEvent.EventId);
-            var scheduledCount = 0;
-            for (var i = 0; i < followUpIds.Count; i++)
-            {
-                var followUpId = NormalizeId(followUpIds[i]);
-                if (string.IsNullOrWhiteSpace(followUpId))
-                {
-                    continue;
-                }
-
-                if (!string.IsNullOrWhiteSpace(completedEventId) && followUpId == completedEventId)
-                {
-                    continue;
-                }
-
-                var scheduleKey = GetScheduledFollowUpKey(followUpId, triggerDay);
-                if (!scheduledFollowUpKeys.Add(scheduleKey))
-                {
-                    continue;
-                }
-
-                scheduledFollowUps.Add(new ScheduledFollowUp
-                {
-                    FollowUpId = followUpId,
-                    TriggerDay = triggerDay
-                });
-                scheduledCount++;
-            }
-
-            if (scheduledCount > 0)
-            {
-                eventManager.PublishSystemMessage(
-                    $"Bu kararın etkileri hemen görünmeyebilir. {delayDays} gün içinde yeni bir gelişme olabilir.");
-            }
-        }
-
-        private void EnqueueDueFollowUps(int day)
-        {
-            if (scheduledFollowUps.Count == 0)
-            {
-                return;
-            }
-
-            for (var i = scheduledFollowUps.Count - 1; i >= 0; i--)
-            {
-                var scheduled = scheduledFollowUps[i];
-                if (scheduled == null || day < scheduled.TriggerDay)
-                {
-                    continue;
-                }
-
-                scheduledFollowUps.RemoveAt(i);
-                scheduledFollowUpKeys.Remove(GetScheduledFollowUpKey(scheduled.FollowUpId, scheduled.TriggerDay));
-
-                if (!eventsById.TryGetValue(scheduled.FollowUpId, out var followUpEvent) || followUpEvent == null)
-                {
-                    if (missingFollowUpWarnings.Add(scheduled.FollowUpId))
-                    {
-                        Debug.LogWarning($"[EventScheduler] Follow-up eventId '{scheduled.FollowUpId}' was not found in scheduler pool.");
-                    }
-
-                    continue;
-                }
-
-                EnqueueWithCooldown(followUpEvent);
-            }
-        }
-
-        private void EnqueueFollowUps(EventData completedEvent, IReadOnlyList<string> followUpIds)
-        {
-            if (completedEvent == null || followUpIds == null || followUpIds.Count == 0)
-            {
-                return;
-            }
-
-            var completedEventId = NormalizeId(completedEvent.EventId);
-            for (var i = 0; i < followUpIds.Count; i++)
-            {
-                var followUpId = NormalizeId(followUpIds[i]);
-                if (string.IsNullOrWhiteSpace(followUpId))
-                {
-                    continue;
-                }
-
-                if (!string.IsNullOrWhiteSpace(completedEventId) && followUpId == completedEventId)
-                {
-                    continue;
-                }
-
-                if (!eventsById.TryGetValue(followUpId, out var followUpEvent) || followUpEvent == null)
-                {
-                    if (missingFollowUpWarnings.Add(followUpId))
-                    {
-                        Debug.LogWarning($"[EventScheduler] Follow-up eventId '{followUpId}' was not found in scheduler pool.");
-                    }
-
-                    continue;
-                }
-
-                EnqueueWithCooldown(followUpEvent);
-            }
-        }
-
-        private static string GetScheduledFollowUpKey(string followUpId, int triggerDay)
-        {
-            return followUpId + "@" + triggerDay;
+            DrainBufferedFollowUps();
         }
 
         private bool IsEligible(EventData eventData, int nowAbsHour, int day)
@@ -483,11 +363,24 @@ namespace DormLifeRoguelike
                     return !timeManager.IsSecondSemester(day);
                 case EventContextTag.SecondSemester:
                     return timeManager.IsSecondSemester(day);
+                case EventContextTag.DebtPressureHigh:
+                    return HasNumericFlagAtLeast("debt_pressure", 3f);
+                case EventContextTag.WorkStrainHigh:
+                    return HasNumericFlagAtLeast("work_strain", 2f);
+                case EventContextTag.BurnoutHigh:
+                    return HasNumericFlagAtLeast("burnout", 2f);
+                case EventContextTag.KykRiskDaysHigh:
+                    return HasNumericFlagAtLeast("kyk_risk_days", 2f);
+                case EventContextTag.IllegalFinePending:
+                    return HasNumericFlagAtLeast("illegal_fine_pending", 1f);
+                case EventContextTag.KykStatusCut:
+                    return HasTextFlag("kyk_status", "Cut");
             }
 
             if (statSystem == null)
             {
-                return true;
+                // Stat-dependent context tags must fail closed when scheduler has no stat service.
+                return false;
             }
 
             return tag switch
@@ -500,6 +393,27 @@ namespace DormLifeRoguelike
                 EventContextTag.AcademicHigh => statSystem.GetStat(StatType.Academic) >= 2.5f,
                 _ => true
             };
+        }
+
+        private bool HasNumericFlagAtLeast(string key, float minValue)
+        {
+            if (flagStateService == null || string.IsNullOrWhiteSpace(key))
+            {
+                return false;
+            }
+
+            return flagStateService.TryGetNumeric(key, out var value) && value >= minValue;
+        }
+
+        private bool HasTextFlag(string key, string expectedValue)
+        {
+            if (flagStateService == null || string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(expectedValue))
+            {
+                return false;
+            }
+
+            return flagStateService.TryGetText(key, out var value)
+                && string.Equals(value, expectedValue, StringComparison.OrdinalIgnoreCase);
         }
 
         private string GetEventKey(EventData eventData)
@@ -609,3 +523,4 @@ namespace DormLifeRoguelike
         }
     }
 }
+

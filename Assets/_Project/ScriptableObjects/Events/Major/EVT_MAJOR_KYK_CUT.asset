@@ -13,23 +13,83 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_KYK_CUT
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_KYK_CUT_001
-  title: KYK Cut Notice
-  description: Burs destegi kesildi.
+  title: KYK Kesildi
+  description: Bildirim dusuyor ve bir sure ekrana bakiyorsun. Kesildi. Yurt ayni
+    yurt. Oda ayni oda. Ama simdi her gun daha dar. Bu sadece para degil; nefes alanin
+    daralmasi.
   category: Major
   selectionWeight: 1
-  requiredContextTags:
-  - 10
-  - 1
+  requiredContextTags: 0a00000001000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Durumu kabul et
+  - text: Kabul et (devam)
+    notes: 
     effects:
     - statType: 1
-      delta: -20
+      delta: -8
     - statType: 3
-      delta: -1500
+      delta: 0
+    flags:
+    - key: kyk_status
+      mode: 1
+      numericValue: 0
+      textValue: Cut
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Aileye yaz (yardim iste)
+    notes: 
+    effects:
+    - statType: 1
+      delta: -4
+    - statType: 3
+      delta: 200
+    flags:
+    - key: family_pressure
+      mode: 0
+      numericValue: 1
+      textValue: 
+    - key: kyk_status
+      mode: 1
+      numericValue: 0
+      textValue: Cut
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Ise aban (hemen cozmeye calisma)
+    notes: 
+    effects:
+    - statType: 1
+      delta: -6
+    - statType: 2
+      delta: -2
+    - statType: 3
+      delta: 150
+    flags:
+    - key: work_strain
+      mode: 0
+      numericValue: 2
+      textValue: 
+    - key: kyk_status
+      mode: 1
+      numericValue: 0
+      textValue: Cut
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

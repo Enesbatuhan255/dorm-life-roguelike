@@ -34,14 +34,37 @@
 - [x] Regression tests added (`OnGameEnded` single-fire + resolved-after-action no-op)
 - [x] PlayMode sanity script added (`Tools/mcp/playmode_sanity_check.ps1`)
 - [x] Scheduler/Queue regression tests expanded (active same-ID dedupe, shared cooldown key, all-ineligible no-queue)
+- [x] `_Project` regression stabilization gate passed (2 consecutive clean EditMode runs in `DormLifeRoguelike.Tests.EditMode`)
+- [x] Event category/context filter hardening completed (stat-tag fail-closed when scheduler has no stat service)
+- [x] Event scheduler policy tests expanded for category/context filter edge cases
+- [x] Event chain/follow-up repeat policy implemented (same follow-up is processed for each trigger)
+- [x] Event scheduler policy tests expanded for repeated immediate/delayed follow-up scenarios
+- [x] Wave 1 choice-depth rollout completed for 16 high-impact events (Major>=3, Minor>=2)
+- [x] Choice coverage validator + CSV report pipeline added (`EventChoiceCoverageValidator`, `event_choice_coverage_report.csv`)
+- [x] Event chain graph exporter added (`EventChainGraphReport`, `event_chain_graph.csv`)
+- [x] Chain integrity and Wave 1 choice policy regression tests added
+- [x] Wave 2 choice-depth rollout completed for remaining 12 production events
+- [x] Global choice policy gate reached for production EventData (Major>=3, Minor>=2 for 28/28)
+- [x] Choice `flags` runtime state service added (`IFlagStateService`, `FlagStateService`)
+- [x] Daily flag-driven rule engine added (`IFlagRuleService`, `FlagRuleService`)
+- [x] Flag application regression tests added (`EventFlagStateTests`, `FlagRuleServiceTests`)
+- [x] Stabilization baseline lock refreshed (`DormLifeRoguelike.Tests.EditMode` + `DormLifeRoguelike.Tests.PlayMode`)
+- [x] Gameplay test gate finalized as namespace-scoped acceptance (`DormLifeRoguelike.Tests.*`)
+- [x] Production EventData category/context tuning pass completed (weights + requiredContextTags)
+- [x] PlayMode coverage expanded for scheduler critical flows (delayed follow-up, chain repeat, context tags)
+- [x] Save/Load snapshot schema expanded to runtime systems (EventManager queue, EventScheduler state, GameOutcome state)
+- [x] Snapshot migration bumped to schema v2 with backward-compatible defaults
+- [x] `EventScheduler` split into partials (`EventScheduler.cs` + `EventScheduler.FollowUpsAndState.cs`) for maintainability
+- [x] `ActionPanelPresenter` split into partials (`ActionPanelPresenter.cs` + `.Ui` + `.Interactive`)
+- [x] `MicroChallengePanelPresenter` split into partials (`MicroChallengePanelPresenter.cs` + `.Ui`)
+- [x] Stat HUD readability polish applied (`StatHudPresenter`: risk tags + color-coded values + improved formatting)
+- [x] No-space path migration toolkit added (`migrate_project_path_no_spaces.ps1` + runbook + dry-run validated)
 
 ## In Progress
-- [ ] Hook additional gameplay time progression into scheduler (currently actions + debug)
+- [ ] Tune cooldown/category/queue policy based on focused playtests
+- [ ] Continue UI maintainability pass (shared UI builder/helpers for panel presenters)
+- [ ] Execute project path migration to no-space folder and re-validate MCP stability
 
 ## Next
-- [ ] Add non-debug time source (sleep/actions/clock loop) to call `ITimeManager.AdvanceTime`
-- [ ] Add event category filters
-- [ ] Add per-event cooldown tuning asset/config (instead of global cooldown only)
-- [ ] Add event chain support (follow-up event IDs)
-- [ ] Add Stat HUD polish (formatting/colors/icons)
-- [ ] Add playmode/editmode tests for scheduler, economy, sleep-debt and queue behavior
+- [ ] Add richer HUD visuals (icons/mini-bars) if art direction allows
+- [ ] Refactor large classes (`ActionPanelPresenter`, `EventScheduler`, `MicroChallengePanelPresenter`)

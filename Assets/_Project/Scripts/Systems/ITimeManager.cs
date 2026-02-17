@@ -31,5 +31,7 @@ namespace DormLifeRoguelike
         bool IsSecondSemester(int day);
 
         void AdvanceTime(int hours);
+
+        void SetAbsoluteTimeForLoad(int day, int hour);
     }
 }

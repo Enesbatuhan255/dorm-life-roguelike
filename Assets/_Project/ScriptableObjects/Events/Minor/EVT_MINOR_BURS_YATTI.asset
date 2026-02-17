@@ -13,23 +13,48 @@ MonoBehaviour:
   m_Name: EVT_MINOR_BURS_YATTI
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MINOR_BURS_001
-  title: Burs yatti
-  description: Aylik odeme hesaba gecti.
+  title: Burs Yatti
+  description: 'Bildirim: Odeme hesabiniza gecti. Bir an icin nefes aliyorsun. Sonra
+    hesap yapmaya basliyorsun.'
   category: Minor
   selectionWeight: 1
-  requiredContextTags:
-  - 10
-  - 0
+  requiredContextTags: 0a00000000000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Harcamayi dengele
+  - text: Butce yap (borcu kapat)
+    notes: 
     effects:
     - statType: 3
       delta: 1500
     - statType: 1
       delta: 2
+    flags:
+    - key: debt_pressure
+      mode: 0
+      numericValue: -1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Kendine kucuk bir sey al (moral)
+    notes: 
+    effects:
+    - statType: 3
+      delta: 1350
+    - statType: 1
+      delta: 4
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

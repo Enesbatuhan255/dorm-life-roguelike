@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -13,20 +13,28 @@ MonoBehaviour:
   m_Name: EVT_MINOR_KUMAR_FIRSATI
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MINOR_GAMBLE_001
-  title: Kumar firsati
-  description: Para cok azalinca hizli kazanc fikri cazip geliyor.
+  title: Kumar Firsati
+  description: 'Para azaldikca akil kisa yollari daha yuksek sesle fisildiyor. Arkadasin
+    bir site gosteriyor. Kucuk at, buyur. Bu teklif gercek bir secenek: kisa yol
+    mu, bedel mi?'
   category: Minor
   selectionWeight: 1
-  requiredContextTags:
-  - 0
+  requiredContextTags: 00000000
   followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Masaya otur, hizli para dene
+  - text: Masaya otur (hizli para dene)
+    notes: 
     effects:
-    - statType: 3
-      delta: 160
     - statType: 1
-      delta: -4
+      delta: -2
+    - statType: 2
+      delta: -1
+    flags:
+    - key: illegal_gamble_triggered
+      mode: 0
+      numericValue: 1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
@@ -36,10 +44,16 @@ MonoBehaviour:
     - EVT_MAJOR_GAMBLE_002
     followUpDelayDays: 2
     timeAdvanceHours: 0
-  - text: Uzak dur, riski alma
+  - text: Uzak dur (riski alma)
+    notes: 
     effects:
     - statType: 1
       delta: 1
+    flags:
+    - key: gamble_refusal
+      mode: 0
+      numericValue: 1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0

@@ -13,24 +13,71 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_KYK_WARNING
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_KYK_WARNING_001
-  title: KYK Warning
-  description: Burs riski kritik seviyeye geldi.
+  title: 'KYK Uyarisi: Cizgiye Geldin'
+  description: Bu sefer uyari net. Kesinti uygulanabilir. Artik mesele sadece not
+    degil; gelir de gidiyor. Gelir gidince her sey zorlasir.
   category: Major
   selectionWeight: 1
-  requiredContextTags:
-  - 0
-  followUpEventIds:
-  - EVT_MAJOR_KYK_MONITOR_001
+  requiredContextTags: 00000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Acil duzelt
+  - text: Acil duzelt (crunch haftasi)
+    notes: 
     effects:
-    - statType: 1
-      delta: -6
     - statType: 4
-      delta: 0
+      delta: 0.1
+    - statType: 1
+      delta: -5
+    - statType: 2
+      delta: -4
+    flags:
+    - key: burnout
+      mode: 0
+      numericValue: 1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Is + okul dengele (iki taraf da yarim)
+    notes: 
+    effects:
+    - statType: 3
+      delta: 120
+    - statType: 4
+      delta: 0.04
+    - statType: 1
+      delta: -4
+    - statType: 2
+      delta: -3
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Kayitsiz kal (bedeli var)
+    notes: 
+    effects:
+    - statType: 4
+      delta: -0.08
+    - statType: 1
+      delta: -2
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds:
+    - EVT_MAJOR_KYK_CUT_001
+    followUpDelayDays: 0
     timeAdvanceHours: 0

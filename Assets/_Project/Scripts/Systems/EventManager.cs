@@ -10,15 +10,22 @@ namespace DormLifeRoguelike
 
         private readonly IStatSystem statSystem;
         private readonly ITimeManager timeManager;
+        private readonly IFlagStateService flagStateService;
         private readonly Queue<EventData> pendingEvents = new Queue<EventData>();
         private readonly HashSet<string> pendingEventIds = new HashSet<string>();
         private readonly HashSet<int> missingEventIdWarnings = new HashSet<int>();
         private EventData currentEvent;
 
         public EventManager(IStatSystem statSystem, ITimeManager timeManager)
+            : this(statSystem, timeManager, null)
+        {
+        }
+
+        public EventManager(IStatSystem statSystem, ITimeManager timeManager, IFlagStateService flagStateService)
         {
             this.statSystem = statSystem ?? throw new ArgumentNullException(nameof(statSystem));
             this.timeManager = timeManager ?? throw new ArgumentNullException(nameof(timeManager));
+            this.flagStateService = flagStateService;
         }
 
         public event Action<EventData> OnEventStarted;
@@ -30,36 +37,37 @@ namespace DormLifeRoguelike
 
         public bool HasPendingEvents => pendingEvents.Count > 0;
 
-        public void EnqueueEvent(EventData eventData)
+        public bool EnqueueEvent(EventData eventData)
         {
             if (eventData == null)
             {
                 LogOutcome("Cannot enqueue null event data.");
-                return;
+                return false;
             }
 
             var eventKey = GetEventKey(eventData);
             if (currentEvent != null && GetEventKey(currentEvent) == eventKey)
             {
                 LogOutcome($"Skipped duplicate enqueue for active event '{eventData.Title}'.");
-                return;
+                return false;
             }
 
             if (pendingEventIds.Contains(eventKey))
             {
                 LogOutcome($"Skipped duplicate enqueue for pending event '{eventData.Title}'.");
-                return;
+                return false;
             }
 
             if (pendingEvents.Count >= MaxPendingQueueSize)
             {
                 LogOutcome($"Dropped event '{eventData.Title}' because pending queue is full ({MaxPendingQueueSize}).");
-                return;
+                return false;
             }
 
             pendingEvents.Enqueue(eventData);
             pendingEventIds.Add(eventKey);
             TryStartNextEvent();
+            return true;
         }
 
         public IReadOnlyList<EventChoice> GetAvailableChoices(EventData eventData)
@@ -140,6 +148,8 @@ namespace DormLifeRoguelike
                 statSystem.ApplyBaseDelta(effect.StatType, effect.Delta);
             }
 
+            flagStateService?.ApplyChanges(choice.Flags);
+
             var timeAdvanceHours = Mathf.Max(0, choice.TimeAdvanceHours);
             if (timeAdvanceHours > 0)
             {
@@ -156,6 +166,81 @@ namespace DormLifeRoguelike
             }
 
             return true;
+        }
+
+        public EventManagerSnapshot CaptureRuntimeSnapshot()
+        {
+            var snapshot = new EventManagerSnapshot
+            {
+                currentEventId = NormalizeEventId(currentEvent != null ? currentEvent.EventId : string.Empty)
+            };
+
+            foreach (var pending in pendingEvents)
+            {
+                if (pending == null)
+                {
+                    continue;
+                }
+
+                var eventId = NormalizeEventId(pending.EventId);
+                if (!string.IsNullOrWhiteSpace(eventId))
+                {
+                    snapshot.pendingEventIds.Add(eventId);
+                }
+            }
+
+            return snapshot;
+        }
+
+        public void RestoreRuntimeSnapshot(EventManagerSnapshot snapshot, IReadOnlyDictionary<string, EventData> eventLookup)
+        {
+            pendingEvents.Clear();
+            pendingEventIds.Clear();
+            currentEvent = null;
+
+            if (snapshot == null || eventLookup == null || eventLookup.Count == 0)
+            {
+                return;
+            }
+
+            var currentId = NormalizeEventId(snapshot.currentEventId);
+            if (TryResolveEventById(currentId, eventLookup, out var restoredCurrent) && restoredCurrent != null)
+            {
+                currentEvent = restoredCurrent;
+            }
+
+            var pendingIds = snapshot.pendingEventIds;
+            if (pendingIds != null)
+            {
+                for (var i = 0; i < pendingIds.Count; i++)
+                {
+                    var pendingId = NormalizeEventId(pendingIds[i]);
+                    if (string.IsNullOrWhiteSpace(pendingId) || pendingId == currentId)
+                    {
+                        continue;
+                    }
+
+                    if (!TryResolveEventById(pendingId, eventLookup, out var pendingEvent) || pendingEvent == null)
+                    {
+                        continue;
+                    }
+
+                    var key = GetEventKey(pendingEvent);
+                    if (pendingEventIds.Add(key))
+                    {
+                        pendingEvents.Enqueue(pendingEvent);
+                    }
+                }
+            }
+
+            if (currentEvent != null)
+            {
+                OnEventStarted?.Invoke(currentEvent);
+                LogOutcome($"Event restored: '{currentEvent.Title}'.");
+                return;
+            }
+
+            TryStartNextEvent();
         }
 
         private void TryStartNextEvent()
@@ -241,6 +326,27 @@ namespace DormLifeRoguelike
         {
             Debug.Log($"[EventManager] {message}");
             OnOutcomeLogged?.Invoke(message);
+        }
+
+        private static string NormalizeEventId(string eventId)
+        {
+            return string.IsNullOrWhiteSpace(eventId) ? string.Empty : eventId.Trim();
+        }
+
+        private static bool TryResolveEventById(string eventId, IReadOnlyDictionary<string, EventData> eventLookup, out EventData eventData)
+        {
+            eventData = null;
+            if (string.IsNullOrWhiteSpace(eventId) || eventLookup == null)
+            {
+                return false;
+            }
+
+            if (eventLookup.TryGetValue(eventId, out eventData))
+            {
+                return eventData != null;
+            }
+
+            return eventLookup.TryGetValue(eventId.ToLowerInvariant(), out eventData) && eventData != null;
         }
     }
 }

@@ -210,6 +210,23 @@ namespace DormLifeRoguelike.Tests.EditMode
             Object.DestroyImmediate(missingDatabase);
         }
 
+        [Test]
+        public void ForcedEndingId_WhenProvided_HasPriorityOverCalculatedEnding()
+        {
+            var result = EndingResolver.Resolve(
+                isEarlyFailure: false,
+                isAcademicPass: true,
+                mental: 90f,
+                energy: 90f,
+                money: 800f,
+                config: config,
+                endingDatabase: endingDatabase,
+                isDebtEnforcementTriggered: false,
+                forcedEndingId: EndingId.ExpelledBurnout);
+
+            Assert.That(result.EndingId, Is.EqualTo(EndingId.ExpelledBurnout));
+        }
+
         private static EndingDatabase CreatePopulatedEndingDatabase()
         {
             var database = ScriptableObject.CreateInstance<EndingDatabase>();

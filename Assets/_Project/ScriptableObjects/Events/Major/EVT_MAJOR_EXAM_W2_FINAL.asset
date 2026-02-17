@@ -13,23 +13,72 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_EXAM_W2_FINAL
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_EXAM_W2_FINAL
-  title: Exam Week 2 Final
-  description: Donemin final haftasi geldi.
+  title: 'Final Haftasi 1: Dayanma'
+  description: Final haftasi geldi. Yurt odasinda isik sabaha kadar acik. Disaridan
+    gelen sesler bile yetismeyecek gibi.
   category: Major
   selectionWeight: 1
-  requiredContextTags:
-  - 6
-  - 11
+  requiredContextTags: 060000000b000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Crunch mod
+  - text: Son ana kadar calis (crunch)
+    notes: 
     effects:
     - statType: 4
-      delta: 0.15
+      delta: 0.22
+    - statType: 1
+      delta: -7
     - statType: 2
-      delta: -8
+      delta: -4
+    flags:
+    - key: burnout
+      mode: 0
+      numericValue: 2
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Dengeli gir (uyku + kisa tekrar)
+    notes: 
+    effects:
+    - statType: 4
+      delta: 0.12
+    - statType: 1
+      delta: -3
+    - statType: 2
+      delta: -2
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Birak (gecerim belki)
+    notes: 
+    effects:
+    - statType: 4
+      delta: -0.25
+    - statType: 1
+      delta: -4
+    flags:
+    - key: kyk_risk_days
+      mode: 0
+      numericValue: 2
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

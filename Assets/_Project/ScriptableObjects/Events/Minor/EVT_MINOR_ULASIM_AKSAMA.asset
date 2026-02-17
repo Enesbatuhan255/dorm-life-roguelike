@@ -13,22 +13,43 @@ MonoBehaviour:
   m_Name: EVT_MINOR_ULASIM_AKSAMA
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MINOR_TRANS_001
-  title: Ulasim aksadi
-  description: Uzayan yolculuk tum plani kaydirdi.
+  title: Ulasim Aksadi
+  description: Otobus gelmedi. Bekledikce gun kayiyor. Kafa da kayiyor.
   category: Minor
-  selectionWeight: 1
-  requiredContextTags:
-  - 9
+  selectionWeight: 0.95
+  requiredContextTags: 0900000000000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Yuruyerek don
+  - text: Yuruyerek don (yorgunluk)
+    notes: 
     effects:
     - statType: 2
-      delta: -3
+      delta: -1
     - statType: 1
       delta: -1
+    flags: []
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Taksi/Minibus (para)
+    notes: 
+    effects:
+    - statType: 3
+      delta: -60
+    - statType: 1
+      delta: 0
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

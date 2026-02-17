@@ -13,23 +13,72 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_EXAM_W1_VIZE
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_EXAM_W1_VIZE
-  title: Exam Week 1 Vize
-  description: Ilk vize haftasi basladi.
+  title: 'Vize Haftasi 1: Ilk Daralma'
+  description: Sinifta herkes cikmis soru konusuyor. Senin notlarin eksik, kafan
+    da dolu. Vize bugun. Bu karar notundan once, gununun geri kalanini belirleyecek.
   category: Major
   selectionWeight: 1
-  requiredContextTags:
-  - 6
-  - 11
+  requiredContextTags: 060000000b000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Normal hazirlik
+  - text: Normal gir (ne varsa)
+    notes: 
     effects:
     - statType: 4
-      delta: 0.12
+      delta: 0.08
+    - statType: 1
+      delta: -2
     - statType: 2
-      delta: -6
+      delta: -1
+    flags: []
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Crunch (2x enerji, kisa vadeli)
+    notes: 
+    effects:
+    - statType: 4
+      delta: 0.15
+    - statType: 1
+      delta: -5
+    - statType: 2
+      delta: -3
+    flags:
+    - key: burnout
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Girme (bugunu kurtar, yarin kaybedersin)
+    notes: 
+    effects:
+    - statType: 4
+      delta: -0.18
+    - statType: 1
+      delta: -3
+    flags:
+    - key: kyk_risk_days
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

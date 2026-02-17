@@ -13,22 +13,46 @@ MonoBehaviour:
   m_Name: EVT_MINOR_YEMEKHANE_KALITE
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MINOR_COST_001
-  title: Yemekhane kalitesi dustu
-  description: Disaridan yemek alma zorunlulugu dogdu.
+  title: Yemekhane Kalitesi Dustu
+  description: Bugun yemek yenmiyor. Yeniyor da, yemek sayilmiyor. Disaridan almak
+    zorundasin gibi.
   category: Minor
   selectionWeight: 1
-  requiredContextTags:
-  - 0
+  requiredContextTags: 00000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Idare et
+  - text: Idare et (yemekhaneyi ye)
+    notes: 
     effects:
-    - statType: 3
-      delta: -45
+    - statType: 0
+      delta: 1
     - statType: 1
       delta: -1
+    flags: []
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Disaridan al (para gider, midede rahat)
+    notes: 
+    effects:
+    - statType: 3
+      delta: -60
+    - statType: 0
+      delta: -1
+    - statType: 1
+      delta: 1
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

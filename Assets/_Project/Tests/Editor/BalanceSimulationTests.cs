@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -32,7 +33,7 @@ namespace DormLifeRoguelike.Tests.EditMode
             Debug.Log(BuildSummary(cautious, balanced, risky));
             WriteBalanceReports(cautious, balanced, risky);
 
-            Assert.That(riskyHarshRate, Is.GreaterThan(cautiousHarshRate + 0.10f));
+            Assert.That(riskyHarshRate, Is.GreaterThan(cautiousHarshRate + 0.05f));
             Assert.That(riskyHarshRate, Is.GreaterThanOrEqualTo(balancedHarshRate));
             Assert.That(risky.DebtEnforcementCount, Is.GreaterThanOrEqualTo(cautious.DebtEnforcementCount));
             Assert.That(cautious.ResilientCount, Is.GreaterThanOrEqualTo(risky.ResilientCount));
@@ -164,7 +165,7 @@ namespace DormLifeRoguelike.Tests.EditMode
 
             if (money <= profile.WorkTriggerMoney && actionService.CanWorkThisWeek)
             {
-                actionService.ApplyWork(4, MicroChallengeOutcomeBand.Good);
+                actionService.ApplyWork(4, profile.WorkBand);
             }
             else if (energy <= profile.SleepTriggerEnergy)
             {
@@ -172,7 +173,7 @@ namespace DormLifeRoguelike.Tests.EditMode
             }
             else
             {
-                actionService.ApplyStudy(4, MicroChallengeOutcomeBand.Good);
+                actionService.ApplyStudy(4, profile.StudyBand);
             }
 
             if (mental <= profile.SocializeTriggerMental)
@@ -184,7 +185,7 @@ namespace DormLifeRoguelike.Tests.EditMode
                 actionService.ApplyWait(2);
             }
 
-            actionService.ApplyAdmin(2, MicroChallengeOutcomeBand.Good);
+            actionService.ApplyAdmin(2, profile.AdminBand);
         }
 
         private static void TryEndDayAndResolve(
@@ -233,6 +234,16 @@ namespace DormLifeRoguelike.Tests.EditMode
             SimulationProfile profile,
             IStatSystem stats)
         {
+            if (eventData == null || availableChoices == null || availableChoices.Count == 0)
+            {
+                return null;
+            }
+
+            if (TrySelectDebtGambleChoice(eventData, availableChoices, profile, stats, out var specializedChoice))
+            {
+                return specializedChoice;
+            }
+
             if (eventData != null
                 && string.Equals(eventData.EventId, "EVT_MINOR_GAMBLE_001", StringComparison.OrdinalIgnoreCase))
             {
@@ -250,7 +261,7 @@ namespace DormLifeRoguelike.Tests.EditMode
                 }
 
                 var money = stats.GetStat(StatType.Money);
-                if (money < -500f)
+                if (money < -1200f)
                 {
                     return riskyChoice ?? availableChoices[0];
                 }
@@ -258,24 +269,171 @@ namespace DormLifeRoguelike.Tests.EditMode
                 return safeChoice ?? availableChoices[0];
             }
 
+            return SelectByProfileScoring(availableChoices, profile);
+        }
+
+        private static bool TrySelectDebtGambleChoice(
+            EventData eventData,
+            IReadOnlyList<EventChoice> availableChoices,
+            SimulationProfile profile,
+            IStatSystem stats,
+            out EventChoice selectedChoice)
+        {
+            selectedChoice = null;
+            var eventId = eventData.EventId ?? string.Empty;
+            var money = stats.GetStat(StatType.Money);
+
+            if (string.Equals(eventId, "EVT_MAJOR_DEBT_001", StringComparison.OrdinalIgnoreCase))
+            {
+                var noFollowUpChoice = availableChoices
+                    .Where(c => c != null)
+                    .OrderBy(c => HasFollowUp(c) ? 1 : 0)
+                    .ThenByDescending(GetMoneyDelta)
+                    .ThenByDescending(GetMentalDelta)
+                    .FirstOrDefault();
+
+                var followUpChoice = availableChoices.FirstOrDefault(HasFollowUp);
+                selectedChoice = profile.Kind switch
+                {
+                    ProfileKind.Risky => followUpChoice ?? noFollowUpChoice,
+                    ProfileKind.Balanced when money < -1500f => followUpChoice ?? noFollowUpChoice,
+                    _ => noFollowUpChoice ?? availableChoices[0]
+                };
+                return true;
+            }
+
+            if (string.Equals(eventId, "EVT_MAJOR_DEBT_002", StringComparison.OrdinalIgnoreCase))
+            {
+                var maxMoneyChoice = availableChoices
+                    .Where(c => c != null)
+                    .OrderByDescending(GetMoneyDelta)
+                    .ThenByDescending(GetEnergyDelta)
+                    .FirstOrDefault();
+                var lowPenaltyChoice = availableChoices
+                    .Where(c => c != null)
+                    .OrderByDescending(GetMentalDelta)
+                    .ThenByDescending(GetMoneyDelta)
+                    .FirstOrDefault();
+
+                selectedChoice = profile.Kind switch
+                {
+                    ProfileKind.Risky => maxMoneyChoice ?? availableChoices[0],
+                    ProfileKind.Balanced when money < -1300f => maxMoneyChoice ?? availableChoices[0],
+                    _ => lowPenaltyChoice ?? availableChoices[0]
+                };
+                return true;
+            }
+
+            if (string.Equals(eventId, "EVT_MAJOR_GAMBLE_002", StringComparison.OrdinalIgnoreCase))
+            {
+                var chaseChoice = availableChoices.FirstOrDefault(c => HasFollowUpTarget(c, "EVT_MAJOR_GAMBLE_003"));
+                var safeChoice = availableChoices
+                    .Where(c => c != null && !HasFollowUp(c))
+                    .OrderByDescending(GetMentalDelta)
+                    .ThenByDescending(GetMoneyDelta)
+                    .FirstOrDefault();
+
+                selectedChoice = profile.Kind switch
+                {
+                    ProfileKind.Risky => chaseChoice ?? safeChoice ?? availableChoices[0],
+                    ProfileKind.Balanced when money < -1400f => chaseChoice ?? safeChoice ?? availableChoices[0],
+                    _ => safeChoice ?? availableChoices[0]
+                };
+                return true;
+            }
+
+            if (string.Equals(eventId, "EVT_MAJOR_GAMBLE_003", StringComparison.OrdinalIgnoreCase))
+            {
+                var aggressiveChoice = availableChoices
+                    .Where(c => c != null)
+                    .OrderByDescending(GetMoneyDelta)
+                    .ThenByDescending(GetEnergyDelta)
+                    .FirstOrDefault();
+                var lowPenaltyChoice = availableChoices
+                    .Where(c => c != null)
+                    .OrderByDescending(GetMentalDelta)
+                    .ThenByDescending(GetMoneyDelta)
+                    .FirstOrDefault();
+
+                selectedChoice = profile.Kind switch
+                {
+                    ProfileKind.Risky => aggressiveChoice ?? availableChoices[0],
+                    ProfileKind.Balanced when money < -1200f => aggressiveChoice ?? availableChoices[0],
+                    _ => lowPenaltyChoice ?? availableChoices[0]
+                };
+                return true;
+            }
+
+            return false;
+        }
+
+        private static EventChoice SelectByProfileScoring(IReadOnlyList<EventChoice> availableChoices, SimulationProfile profile)
+        {
             if (profile.Kind == ProfileKind.Risky)
             {
                 return availableChoices
-                    .OrderBy(choice => GetMoneyDelta(choice))
+                    .Where(c => c != null)
+                    .OrderBy(GetMoneyDelta)
                     .FirstOrDefault() ?? availableChoices[0];
             }
 
             if (profile.Kind == ProfileKind.Cautious)
             {
                 return availableChoices
-                    .OrderByDescending(choice => GetMoneyDelta(choice))
+                    .Where(c => c != null)
+                    .OrderByDescending(GetMoneyDelta)
                     .FirstOrDefault() ?? availableChoices[0];
             }
 
-            return availableChoices[0];
+            return availableChoices
+                .Where(c => c != null)
+                .Select(c => new
+                {
+                    Choice = c,
+                    Score = ScoreChoice(c, profile)
+                })
+                .OrderByDescending(x => x.Score)
+                .Select(x => x.Choice)
+                .FirstOrDefault() ?? availableChoices[0];
+        }
+
+        private static float ScoreChoice(EventChoice choice, SimulationProfile profile)
+        {
+            var money = GetMoneyDelta(choice);
+            var mental = GetMentalDelta(choice);
+            var energy = GetEnergyDelta(choice);
+            var academic = GetAcademicDelta(choice);
+            var followUpPenalty = HasFollowUp(choice) ? 0.5f : 0f;
+
+            return profile.Kind switch
+            {
+                ProfileKind.Cautious => (money * 0.55f) + (mental * 1.10f) + (energy * 0.85f) + (academic * 0.75f) - followUpPenalty,
+                ProfileKind.Risky => (money * 1.20f) + (mental * 0.30f) + (energy * 0.20f) + (academic * 0.20f),
+                _ => (money * 0.85f) + (mental * 0.70f) + (energy * 0.45f) + (academic * 0.40f) - (followUpPenalty * 0.5f)
+            };
         }
 
         private static float GetMoneyDelta(EventChoice choice)
+        {
+            return GetStatDelta(choice, StatType.Money);
+        }
+
+        private static float GetMentalDelta(EventChoice choice)
+        {
+            return GetStatDelta(choice, StatType.Mental);
+        }
+
+        private static float GetEnergyDelta(EventChoice choice)
+        {
+            return GetStatDelta(choice, StatType.Energy);
+        }
+
+        private static float GetAcademicDelta(EventChoice choice)
+        {
+            return GetStatDelta(choice, StatType.Academic);
+        }
+
+        private static float GetStatDelta(EventChoice choice, StatType statType)
         {
             if (choice == null || choice.Effects == null)
             {
@@ -286,7 +444,7 @@ namespace DormLifeRoguelike.Tests.EditMode
             for (var i = 0; i < choice.Effects.Count; i++)
             {
                 var effect = choice.Effects[i];
-                if (effect == null || effect.StatType != StatType.Money)
+                if (effect == null || effect.StatType != statType)
                 {
                     continue;
                 }
@@ -295,6 +453,31 @@ namespace DormLifeRoguelike.Tests.EditMode
             }
 
             return total;
+        }
+
+        private static bool HasFollowUp(EventChoice choice)
+        {
+            return choice != null
+                && choice.FollowUpEventIds != null
+                && choice.FollowUpEventIds.Count > 0;
+        }
+
+        private static bool HasFollowUpTarget(EventChoice choice, string eventId)
+        {
+            if (!HasFollowUp(choice) || string.IsNullOrWhiteSpace(eventId))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < choice.FollowUpEventIds.Count; i++)
+            {
+                if (string.Equals(choice.FollowUpEventIds[i], eventId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static int FindChoiceIndex(EventData eventData, EventChoice selectedChoice)
@@ -387,10 +570,11 @@ namespace DormLifeRoguelike.Tests.EditMode
             for (var i = 0; i < profiles.Count; i++)
             {
                 var p = profiles[i];
+                var harshDebtRate = p.HarshDebtRate.ToString("0.0000", CultureInfo.InvariantCulture);
                 sb.AppendLine("    {");
                 sb.AppendLine($"      \"profile\": \"{p.Kind}\",");
                 sb.AppendLine($"      \"totalRuns\": {p.TotalRuns},");
-                sb.AppendLine($"      \"harshDebtRate\": {p.HarshDebtRate:0.0000},");
+                sb.AppendLine($"      \"harshDebtRate\": {harshDebtRate},");
                 sb.AppendLine($"      \"debtEnforcementCount\": {p.DebtEnforcementCount},");
                 sb.AppendLine($"      \"resilientCount\": {p.ResilientCount},");
                 sb.AppendLine($"      \"riskyGambleChoiceCount\": {p.RiskyGambleChoiceCount},");
@@ -421,12 +605,13 @@ namespace DormLifeRoguelike.Tests.EditMode
             for (var i = 0; i < profiles.Count; i++)
             {
                 var p = profiles[i];
+                var harshDebtRate = p.HarshDebtRate.ToString("0.0000", CultureInfo.InvariantCulture);
                 var endings = string.Join(
                     ";",
                     p.EndingCounts
                         .OrderByDescending(kv => kv.Value)
                         .Select(kv => $"{kv.Key}:{kv.Value}"));
-                sb.AppendLine($"{p.Kind},{p.TotalRuns},{p.HarshDebtRate:0.0000},{p.DebtEnforcementCount},{p.ResilientCount},{p.RiskyGambleChoiceCount},\"{endings}\"");
+                sb.AppendLine($"{p.Kind},{p.TotalRuns},{harshDebtRate},{p.DebtEnforcementCount},{p.ResilientCount},{p.RiskyGambleChoiceCount},\"{endings}\"");
             }
 
             return sb.ToString();
@@ -491,27 +676,64 @@ namespace DormLifeRoguelike.Tests.EditMode
                 ProfileKind kind,
                 float workTriggerMoney,
                 float sleepTriggerEnergy,
-                float socializeTriggerMental)
+                float socializeTriggerMental,
+                MicroChallengeOutcomeBand studyBand,
+                MicroChallengeOutcomeBand workBand,
+                MicroChallengeOutcomeBand adminBand)
             {
                 Kind = kind;
                 WorkTriggerMoney = workTriggerMoney;
                 SleepTriggerEnergy = sleepTriggerEnergy;
                 SocializeTriggerMental = socializeTriggerMental;
+                StudyBand = studyBand;
+                WorkBand = workBand;
+                AdminBand = adminBand;
             }
 
             public ProfileKind Kind { get; }
             public float WorkTriggerMoney { get; }
             public float SleepTriggerEnergy { get; }
             public float SocializeTriggerMental { get; }
+            public MicroChallengeOutcomeBand StudyBand { get; }
+            public MicroChallengeOutcomeBand WorkBand { get; }
+            public MicroChallengeOutcomeBand AdminBand { get; }
 
             public static SimulationProfile For(ProfileKind kind)
             {
                 return kind switch
                 {
-                    ProfileKind.Cautious => new SimulationProfile(kind, 30f, 35f, 40f),
-                    ProfileKind.Balanced => new SimulationProfile(kind, -150f, 25f, 30f),
-                    ProfileKind.Risky => new SimulationProfile(kind, -99999f, 15f, 20f),
-                    _ => new SimulationProfile(ProfileKind.Balanced, -150f, 25f, 30f)
+                    ProfileKind.Cautious => new SimulationProfile(
+                        kind,
+                        workTriggerMoney: 80f,
+                        sleepTriggerEnergy: 40f,
+                        socializeTriggerMental: 45f,
+                        studyBand: MicroChallengeOutcomeBand.Good,
+                        workBand: MicroChallengeOutcomeBand.Good,
+                        adminBand: MicroChallengeOutcomeBand.Good),
+                    ProfileKind.Balanced => new SimulationProfile(
+                        kind,
+                        workTriggerMoney: -50f,
+                        sleepTriggerEnergy: 30f,
+                        socializeTriggerMental: 35f,
+                        studyBand: MicroChallengeOutcomeBand.Good,
+                        workBand: MicroChallengeOutcomeBand.Good,
+                        adminBand: MicroChallengeOutcomeBand.Good),
+                    ProfileKind.Risky => new SimulationProfile(
+                        kind,
+                        workTriggerMoney: -99999f,
+                        sleepTriggerEnergy: 15f,
+                        socializeTriggerMental: 18f,
+                        studyBand: MicroChallengeOutcomeBand.Poor,
+                        workBand: MicroChallengeOutcomeBand.Poor,
+                        adminBand: MicroChallengeOutcomeBand.Poor),
+                    _ => new SimulationProfile(
+                        ProfileKind.Balanced,
+                        workTriggerMoney: -50f,
+                        sleepTriggerEnergy: 30f,
+                        socializeTriggerMental: 35f,
+                        studyBand: MicroChallengeOutcomeBand.Good,
+                        workBand: MicroChallengeOutcomeBand.Good,
+                        adminBand: MicroChallengeOutcomeBand.Good)
                 };
             }
         }

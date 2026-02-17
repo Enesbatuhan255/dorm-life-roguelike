@@ -86,6 +86,15 @@ namespace DormLifeRoguelike
             OnTimeAdvanced?.Invoke(new TimeChangedEventArgs(oldDay, oldHour, Day, Hour, hours));
         }
 
+        public void SetAbsoluteTimeForLoad(int day, int hour)
+        {
+            Day = Math.Max(day, 1);
+            Hour = Math.Clamp(hour, 0, 23);
+            WeekIndex = GetWeekIndex(Day);
+            MonthIndex = GetMonthIndex(Day);
+            OnTimeAdvanced?.Invoke(new TimeChangedEventArgs(Day, Hour, Day, Hour, 0));
+        }
+
         private static int GetWeekIndex(int day)
         {
             return ((Math.Max(day, 1) - 1) / 7) + 1;

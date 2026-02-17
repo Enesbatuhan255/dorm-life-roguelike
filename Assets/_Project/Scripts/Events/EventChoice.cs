@@ -8,7 +8,10 @@ namespace DormLifeRoguelike
     public sealed class EventChoice
     {
         [SerializeField] private string text = "Choice";
+        [TextArea(2, 5)]
+        [SerializeField] private string notes = string.Empty;
         [SerializeField] private List<StatEffect> effects = new List<StatEffect>();
+        [SerializeField] private List<EventFlagChange> flags = new List<EventFlagChange>();
         [SerializeField] private EventCondition condition = new EventCondition();
         [SerializeField] private List<string> followUpEventIds = new List<string>();
         [Min(0)]
@@ -18,7 +21,11 @@ namespace DormLifeRoguelike
 
         public string Text => text;
 
+        public string Notes => notes;
+
         public IReadOnlyList<StatEffect> Effects => effects;
+
+        public IReadOnlyList<EventFlagChange> Flags => flags;
 
         public EventCondition Condition => condition;
 

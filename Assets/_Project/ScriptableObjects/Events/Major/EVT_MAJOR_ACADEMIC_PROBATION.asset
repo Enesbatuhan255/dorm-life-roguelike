@@ -13,22 +13,73 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_ACADEMIC_PROBATION
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_ACADEMIC_001
-  title: Academic Probation
-  description: Yetersiz performans resmi uyariya donustu.
+  title: 'Akademik Denetim: Resmi Uyari'
+  description: 'Danisman mail atmis. Kisa ve resmi: Performansiniz yetersiz. Asil
+    sorun cumle degil; cumlenin sende actigi bosluk. Cunku sen zaten bunu biliyordun.'
   category: Major
   selectionWeight: 1
-  requiredContextTags:
-  - 4
+  requiredContextTags: 04000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Sikilas
+  - text: Sikilas (sosyal yok, duzen var)
+    notes: 
     effects:
     - statType: 4
-      delta: -0.12
+      delta: 0.1
     - statType: 1
-      delta: -5
+      delta: -3
+    - statType: 2
+      delta: -2
+    flags:
+    - key: discipline
+      mode: 0
+      numericValue: 1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Dengeli (uyku+calisma)
+    notes: 
+    effects:
+    - statType: 4
+      delta: 0.06
+    - statType: 1
+      delta: -1
+    - statType: 2
+      delta: -1
+    flags: []
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Gunu kurtar (bugun degil)
+    notes: 
+    effects:
+    - statType: 4
+      delta: -0.05
+    - statType: 1
+      delta: 1
+    flags:
+    - key: kyk_risk_days
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds:
+    - EVT_MAJOR_KYK_MONITOR_001
+    followUpDelayDays: 1
     timeAdvanceHours: 0

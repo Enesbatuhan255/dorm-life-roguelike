@@ -13,25 +13,75 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_KYK_MONITOR
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_KYK_MONITOR_001
-  title: KYK Monitoring
-  description: Ortalamaya dair izleme basladi.
+  title: KYK Izleme Basladi
+  description: 'Sistem mesaji: Basari durumunuz izlemeye alinmistir. Cumle kisa ama
+    etkisi buyuk. Bu noktadan sonra kucuk dususler bile buyur.'
   category: Major
   selectionWeight: 1
-  requiredContextTags:
-  - 10
-  - 0
-  followUpEventIds:
-  - EVT_MAJOR_KYK_CUT_001
+  requiredContextTags: 0a00000000000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Toparlan
+  - text: Toparlan (bugun sosyal yok, calisma var)
+    notes: 
     effects:
-    - statType: 1
-      delta: -3
     - statType: 4
-      delta: 0
+      delta: 0.06
+    - statType: 1
+      delta: -2
+    - statType: 2
+      delta: -2
+    flags:
+    - key: kyk_focus
+      mode: 0
+      numericValue: 1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds:
+    - EVT_MAJOR_KYK_WARNING_001
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Idare et (dengeli)
+    notes: 
+    effects:
+    - statType: 4
+      delta: 0.03
+    - statType: 1
+      delta: -1
+    flags:
+    - key: kyk_risk_days
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Bosver (kisa vadeli rahatlama)
+    notes: 
+    effects:
+    - statType: 1
+      delta: 1
+    - statType: 4
+      delta: -0.05
+    flags:
+    - key: kyk_risk_days
+      mode: 0
+      numericValue: 2
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

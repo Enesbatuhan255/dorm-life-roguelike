@@ -13,23 +13,72 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_EXAM_W3_VIZE
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_EXAM_W3_VIZE
-  title: Exam Week 3 Vize
-  description: Ikinci donem vize baskisi.
+  title: 'Vize Haftasi 2: Ayni Dongu'
+  description: Ikinci donemde ayni sey daha agir geliyor. Cunku artik yorgunluk da
+    birikmis. Bu vize, sadece sinav degil; KYK cizgisini de oynatiyor.
   category: Major
   selectionWeight: 1
-  requiredContextTags:
-  - 6
-  - 12
+  requiredContextTags: 060000000c000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Planli calis
+  - text: Planli calis (az ama surekli)
+    notes: 
     effects:
     - statType: 4
-      delta: 0.12
+      delta: 0.1
+    - statType: 1
+      delta: -2
     - statType: 2
-      delta: -6
+      delta: -2
+    flags: []
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Crunch (bicak sirti)
+    notes: 
+    effects:
+    - statType: 4
+      delta: 0.18
+    - statType: 1
+      delta: -6
+    - statType: 2
+      delta: -4
+    flags:
+    - key: burnout
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Ertelerim (baska dert var)
+    notes: 
+    effects:
+    - statType: 4
+      delta: -0.2
+    - statType: 1
+      delta: -3
+    flags:
+    - key: kyk_risk_days
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

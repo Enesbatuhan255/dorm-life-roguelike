@@ -13,22 +13,74 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_INFLATION_SHOCK
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_INFLATION_001
-  title: Inflation Shock
-  description: Donem gecisiyle temel giderler artti.
+  title: Enflasyon Soku
+  description: Donem donuyor, fiyatlar da donuyor. Ayni urun, ayni paket, ama etiket
+    degismis. Marketin kasasinda normal hissettirmeyen bir sessizlik var. Bu sadece
+    para degil; plan yapma hakkin da daraliyor.
   category: Major
   selectionWeight: 1
-  requiredContextTags:
-  - 8
+  requiredContextTags: 08000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Butceyi kis
+  - text: Butceyi kis (disaridan yemeyi unut)
+    notes: 
     effects:
+    - statType: 0
+      delta: 1
     - statType: 1
-      delta: -3
-    - statType: 3
-      delta: -80
+      delta: -1
+    flags:
+    - key: inflation_mode
+      mode: 1
+      numericValue: 0
+      textValue: tight
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Gelir artir (ise aban)
+    notes: 
+    effects:
+    - statType: 3
+      delta: 120
+    - statType: 2
+      delta: -2
+    - statType: 1
+      delta: -3
+    flags:
+    - key: work_strain
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Gunu kurtar (idare et, sonra bakarsin)
+    notes: 
+    effects:
+    - statType: 1
+      delta: -2
+    flags:
+    - key: debt_pressure
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds:
+    - EVT_MAJOR_DEBT_001
+    followUpDelayDays: 1
     timeAdvanceHours: 0

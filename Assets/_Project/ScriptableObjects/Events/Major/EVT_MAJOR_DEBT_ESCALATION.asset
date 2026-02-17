@@ -13,22 +13,77 @@ MonoBehaviour:
   m_Name: EVT_MAJOR_DEBT_ESCALATION
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
   eventId: EVT_MAJOR_DEBT_002
-  title: Debt Escalation
-  description: Borclar yeniden yapilandirildi, ceza eklendi.
+  title: 'Borc Tirmanisi: Yeniden Yapilandirma + Ceza'
+  description: Bir onceki gecikme yapilandirmaya girmis. Kagit uzerinde cozum gibi,
+    pratikte daha pahali. Ustelik sabit kesinti gunun tam ortasina denk geliyor.
+    Bugun zaten sinirdasin; bu karar birkac gunu etkileyecek.
   category: Major
-  selectionWeight: 1
-  requiredContextTags:
-  - 1
+  selectionWeight: 1.15
+  requiredContextTags: 01000000
+  followUpEventIds: []
+  followUpDelayDays: 0
   choices:
-  - text: Ertele
+  - text: Ertele (faizi kabul et)
+    notes: 
     effects:
     - statType: 3
-      delta: -220
+      delta: -100
     - statType: 1
-      delta: -4
+      delta: -3
+    flags:
+    - key: debt_pressure
+      mode: 0
+      numericValue: 1
+      textValue: 
     condition:
       isEnabled: 0
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Kis ve ode (pazardan degil yemekhane)
+    notes: 
+    effects:
+    - statType: 3
+      delta: -500
+    - statType: 0
+      delta: 2
+    - statType: 1
+      delta: -2
+    flags:
+    - key: debt_pressure
+      mode: 0
+      numericValue: -1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
+    timeAdvanceHours: 0
+  - text: Ek is kovala (hemen vardiya ara)
+    notes: 
+    effects:
+    - statType: 2
+      delta: -3
+    - statType: 1
+      delta: -4
+    - statType: 3
+      delta: 250
+    flags:
+    - key: work_strain
+      mode: 0
+      numericValue: 1
+      textValue: 
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0
