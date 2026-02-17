@@ -84,6 +84,16 @@ namespace DormLifeRoguelike
             return availableChoices;
         }
 
+        public void PublishSystemMessage(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            LogOutcome(message.Trim());
+        }
+
         public bool TryApplyChoice(EventData eventData, int choiceIndex, out string outcomeMessage)
         {
             outcomeMessage = string.Empty;

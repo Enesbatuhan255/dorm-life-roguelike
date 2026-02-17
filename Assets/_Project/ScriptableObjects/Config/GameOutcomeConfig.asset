@@ -24,6 +24,8 @@ MonoBehaviour:
   severeDebtThreshold: -1500
   debtThreshold: -1000
   lightDebtThreshold: -200
+  debtEnforcementThreshold: -1700
+  debtEnforcementGraceDays: 3
   lowMentalThreshold: 25
   fragileMentalThreshold: 45
   lowEnergyThreshold: 20

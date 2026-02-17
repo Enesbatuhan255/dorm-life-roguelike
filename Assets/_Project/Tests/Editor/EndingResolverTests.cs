@@ -65,6 +65,23 @@ namespace DormLifeRoguelike.Tests.EditMode
         }
 
         [Test]
+        public void DebtEnforcementTriggered_ResolvesDebtEnforcementPrison()
+        {
+            var result = EndingResolver.Resolve(
+                isEarlyFailure: true,
+                isAcademicPass: false,
+                mental: 80f,
+                energy: 50f,
+                money: -2200f,
+                config: config,
+                endingDatabase: endingDatabase,
+                isDebtEnforcementTriggered: true);
+
+            Assert.That(result.EndingId, Is.EqualTo(EndingId.DebtEnforcementPrison));
+            Assert.That(result.EmploymentState, Is.EqualTo(EmploymentState.Unemployed));
+        }
+
+        [Test]
         public void Pass_WithHeavyDebt_ResolvesGraduatedUnemployedDebt()
         {
             var result = EndingResolver.Resolve(

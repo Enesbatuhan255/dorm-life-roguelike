@@ -34,6 +34,7 @@ MonoBehaviour:
       value: 0
     followUpEventIds:
     - EVT_MAJOR_GAMBLE_002
+    followUpDelayDays: 2
     timeAdvanceHours: 0
   - text: Uzak dur, riski alma
     effects:
@@ -45,4 +46,5 @@ MonoBehaviour:
       comparisonOperator: 1
       value: 0
     followUpEventIds: []
+    followUpDelayDays: 0
     timeAdvanceHours: 0

@@ -12,6 +12,8 @@ namespace DormLifeRoguelike
         [SerializeField] private EventCondition condition = new EventCondition();
         [SerializeField] private List<string> followUpEventIds = new List<string>();
         [Min(0)]
+        [SerializeField] private int followUpDelayDays;
+        [Min(0)]
         [SerializeField] private int timeAdvanceHours;
 
         public string Text => text;
@@ -21,6 +23,8 @@ namespace DormLifeRoguelike
         public EventCondition Condition => condition;
 
         public IReadOnlyList<string> FollowUpEventIds => followUpEventIds;
+
+        public int FollowUpDelayDays => followUpDelayDays;
 
         public int TimeAdvanceHours => timeAdvanceHours;
     }

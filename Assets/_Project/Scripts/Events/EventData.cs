@@ -33,6 +33,9 @@ namespace DormLifeRoguelike
         [SerializeField] private List<EventContextTag> requiredContextTags = new List<EventContextTag>();
         [Tooltip("Optional follow-up event IDs enqueued after this event is completed.")]
         [SerializeField] private List<string> followUpEventIds = new List<string>();
+        [Min(0)]
+        [Tooltip("Delay in in-game days before event-level follow-ups are enqueued.")]
+        [SerializeField] private int followUpDelayDays;
         [SerializeField] private List<EventChoice> choices = new List<EventChoice>();
 
         public string EventId => eventId;
@@ -49,6 +52,8 @@ namespace DormLifeRoguelike
 
         public IReadOnlyList<string> FollowUpEventIds => followUpEventIds;
 
+        public int FollowUpDelayDays => followUpDelayDays;
+
         public IReadOnlyList<EventChoice> Choices => choices;
 
         private void OnValidate()
@@ -58,6 +63,8 @@ namespace DormLifeRoguelike
             {
                 eventId = trimmed;
             }
+
+            followUpDelayDays = Mathf.Max(0, followUpDelayDays);
 
             if (string.IsNullOrWhiteSpace(eventId))
             {

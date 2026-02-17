@@ -194,7 +194,7 @@ namespace DormLifeRoguelike.Tests.EditMode
             var time = new TimeManager();
             var stats = new StatSystem();
             var manager = new EventManager(stats, time);
-            var followUp = Track(EventTestFactory.CreateEvent("EVT_CHAIN_FOLLOWUP", true, category: "Minor"));
+            var followUp = Track(EventTestFactory.CreateEvent("EVT_CHAIN_FOLLOWUP", true, category: "Major"));
             var root = Track(EventTestFactory.CreateEvent(
                 "EVT_CHAIN_ROOT",
                 true,
@@ -224,8 +224,8 @@ namespace DormLifeRoguelike.Tests.EditMode
             var time = new TimeManager();
             var stats = new StatSystem();
             var manager = new EventManager(stats, time);
-            var choiceFollowUp = Track(EventTestFactory.CreateEvent("EVT_CHAIN_CHOICE", true, category: "Minor"));
-            var eventFollowUp = Track(EventTestFactory.CreateEvent("EVT_CHAIN_EVENT", true, category: "Minor"));
+            var choiceFollowUp = Track(EventTestFactory.CreateEvent("EVT_CHAIN_CHOICE", true, category: "Major"));
+            var eventFollowUp = Track(EventTestFactory.CreateEvent("EVT_CHAIN_EVENT", true, category: "Major"));
             var root = Track(EventTestFactory.CreateEvent(
                 "EVT_CHAIN_ROOT_SELECTIVE",
                 true,
@@ -256,7 +256,7 @@ namespace DormLifeRoguelike.Tests.EditMode
             var time = new TimeManager();
             var stats = new StatSystem();
             var manager = new EventManager(stats, time);
-            var followUp = Track(EventTestFactory.CreateEvent("EVT_CHAIN_OPTIONAL", true, category: "Minor"));
+            var followUp = Track(EventTestFactory.CreateEvent("EVT_CHAIN_OPTIONAL", true, category: "Major"));
             var root = Track(EventTestFactory.CreateEventWithChoices(
                 "EVT_CHAIN_OPTIONAL_ROOT",
                 "Minor",
@@ -277,6 +277,95 @@ namespace DormLifeRoguelike.Tests.EditMode
             manager.TryApplyChoice(manager.CurrentEvent, 1, out _);
             Assert.That(manager.CurrentEvent, Is.Null);
             Assert.That(manager.HasPendingEvents, Is.False);
+
+            Object.DestroyImmediate(cooldownConfig);
+        }
+
+        [Test]
+        public void ChoiceFollowUp_WithDelay_EnqueuesAfterSpecifiedDays()
+        {
+            var time = new TimeManager();
+            var stats = new StatSystem();
+            var manager = new EventManager(stats, time);
+            var outcomes = new List<string>();
+            manager.OnOutcomeLogged += outcomes.Add;
+            var followUp = Track(EventTestFactory.CreateEvent("EVT_DELAYED_CHOICE_FOLLOWUP", true, category: "Major"));
+            var root = Track(EventTestFactory.CreateEvent(
+                "EVT_DELAYED_CHOICE_ROOT",
+                true,
+                category: "Minor",
+                firstChoiceFollowUpEventIds: new[] { "EVT_DELAYED_CHOICE_FOLLOWUP" },
+                firstChoiceFollowUpDelayDays: 2));
+            var cooldownConfig = ScriptableObject.CreateInstance<EventCooldownConfig>();
+            cooldownConfig.SetRuntimeDefaults(999);
+
+            using var scheduler = new EventScheduler(
+                time,
+                manager,
+                stats,
+                new[] { root, followUp },
+                checkIntervalHours: 1,
+                cooldownConfig: cooldownConfig);
+
+            Assert.That(manager.CurrentEvent, Is.SameAs(root));
+            manager.TryApplyChoice(manager.CurrentEvent, 0, out _);
+            Assert.That(manager.CurrentEvent, Is.Null);
+            Assert.That(manager.HasPendingEvents, Is.False);
+            Assert.That(outcomes, Has.Some.Contains("hemen görünmeyebilir"));
+
+            time.AdvanceTime(24);
+            Assert.That(manager.CurrentEvent, Is.Null);
+            Assert.That(manager.HasPendingEvents, Is.False);
+
+            time.AdvanceTime(24);
+            Assert.That(manager.CurrentEvent, Is.SameAs(followUp));
+
+            Object.DestroyImmediate(cooldownConfig);
+        }
+
+        [Test]
+        public void EventFollowUp_WithDelay_EnqueuesAfterSpecifiedDays()
+        {
+            var time = new TimeManager();
+            var stats = new StatSystem();
+            var manager = new EventManager(stats, time);
+            var punish = Track(EventTestFactory.CreateEvent("EVT_DELAYED_EVENT_PUNISH", true, category: "Major"));
+            var chase = Track(EventTestFactory.CreateEvent(
+                "EVT_DELAYED_EVENT_CHASE",
+                true,
+                category: "Major",
+                followUpEventIds: new[] { "EVT_DELAYED_EVENT_PUNISH" },
+                followUpDelayDays: 1));
+            var root = Track(EventTestFactory.CreateEvent(
+                "EVT_DELAYED_EVENT_ROOT",
+                true,
+                category: "Minor",
+                firstChoiceFollowUpEventIds: new[] { "EVT_DELAYED_EVENT_CHASE" },
+                firstChoiceFollowUpDelayDays: 2));
+            var cooldownConfig = ScriptableObject.CreateInstance<EventCooldownConfig>();
+            cooldownConfig.SetRuntimeDefaults(999);
+
+            using var scheduler = new EventScheduler(
+                time,
+                manager,
+                stats,
+                new[] { root, chase, punish },
+                checkIntervalHours: 1,
+                cooldownConfig: cooldownConfig);
+
+            Assert.That(manager.CurrentEvent, Is.SameAs(root));
+            manager.TryApplyChoice(manager.CurrentEvent, 0, out _);
+            Assert.That(manager.CurrentEvent, Is.Null);
+
+            time.AdvanceTime(48);
+            Assert.That(manager.CurrentEvent, Is.SameAs(chase));
+
+            manager.TryApplyChoice(manager.CurrentEvent, 0, out _);
+            Assert.That(manager.CurrentEvent, Is.Null);
+            Assert.That(manager.HasPendingEvents, Is.False);
+
+            time.AdvanceTime(24);
+            Assert.That(manager.CurrentEvent, Is.SameAs(punish));
 
             Object.DestroyImmediate(cooldownConfig);
         }

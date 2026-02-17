@@ -10,6 +10,7 @@ namespace DormLifeRoguelike
         GraduatedPrecariousStable,
         GraduatedResilient,
         FailedDebtTrap,
-        FailedExtendedYear
+        FailedExtendedYear,
+        DebtEnforcementPrison
     }
 }

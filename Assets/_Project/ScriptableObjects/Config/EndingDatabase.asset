@@ -37,5 +37,8 @@ MonoBehaviour:
   - endingId: 8
     epilogTitle: Uzatmali Donem
     epilogBody: Okul bitti denemedi. Yeni donem daha sert olacak ve hata payi daha da dar.
+  - endingId: 9
+    epilogTitle: Haciz ve Hapis
+    epilogBody: Borc kritik seviyede uzun sure kapatilamadi. Haciz sureci ve adli yaptirimla oyundan dustun.
   fallbackTitle: Hayat Devam Ediyor
   fallbackBody: Sartlar agir. Plan bozuldu ama hikaye bitmedi.

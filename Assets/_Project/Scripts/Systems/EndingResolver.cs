@@ -43,10 +43,11 @@ namespace DormLifeRoguelike
             float energy,
             float money,
             GameOutcomeConfig config,
-            EndingDatabase endingDatabase)
+            EndingDatabase endingDatabase,
+            bool isDebtEnforcementTriggered = false)
         {
             var debtBand = ResolveDebtBand(money, config);
-            var endingId = ResolveEndingId(isEarlyFailure, isAcademicPass, mental, energy, money, config);
+            var endingId = ResolveEndingId(isEarlyFailure, isAcademicPass, mental, energy, money, config, isDebtEnforcementTriggered);
             var employmentState = ResolveEmploymentState(endingId);
 
             if (endingDatabase != null && endingDatabase.TryGetEntry(endingId, out var entry))
@@ -82,8 +83,14 @@ namespace DormLifeRoguelike
             float mental,
             float energy,
             float money,
-            GameOutcomeConfig config)
+            GameOutcomeConfig config,
+            bool isDebtEnforcementTriggered)
         {
+            if (isDebtEnforcementTriggered)
+            {
+                return EndingId.DebtEnforcementPrison;
+            }
+
             if (isEarlyFailure)
             {
                 if (money < config.SevereDebtThreshold)
@@ -144,6 +151,7 @@ namespace DormLifeRoguelike
                 EndingId.GraduatedResilient => EmploymentState.Stable,
                 EndingId.FailedDebtTrap => EmploymentState.Precarious,
                 EndingId.FailedExtendedYear => EmploymentState.Precarious,
+                EndingId.DebtEnforcementPrison => EmploymentState.Unemployed,
                 _ => EmploymentState.Unknown
             };
         }

@@ -33,6 +33,9 @@ namespace DormLifeRoguelike
         [SerializeField] private float severeDebtThreshold = -1500f;
         [SerializeField] private float debtThreshold = -1000f;
         [SerializeField] private float lightDebtThreshold = -200f;
+        [SerializeField] private float debtEnforcementThreshold = -1800f;
+        [Min(1)]
+        [SerializeField] private int debtEnforcementGraceDays = 4;
         [SerializeField] private float lowMentalThreshold = 25f;
         [SerializeField] private float fragileMentalThreshold = 45f;
         [SerializeField] private float lowEnergyThreshold = 20f;
@@ -61,6 +64,10 @@ namespace DormLifeRoguelike
 
         public float LightDebtThreshold => lightDebtThreshold;
 
+        public float DebtEnforcementThreshold => debtEnforcementThreshold;
+
+        public int DebtEnforcementGraceDays => debtEnforcementGraceDays;
+
         public float LowMentalThreshold => lowMentalThreshold;
 
         public float FragileMentalThreshold => fragileMentalThreshold;
@@ -80,6 +87,8 @@ namespace DormLifeRoguelike
             float severeDebtThresholdValue = -1500f,
             float debtThresholdValue = -1000f,
             float lightDebtThresholdValue = -200f,
+            float debtEnforcementThresholdValue = -1800f,
+            int debtEnforcementGraceDaysValue = 4,
             float lowMentalThresholdValue = 25f,
             float fragileMentalThresholdValue = 45f,
             float lowEnergyThresholdValue = 20f)
@@ -96,6 +105,8 @@ namespace DormLifeRoguelike
             severeDebtThreshold = severeDebtThresholdValue;
             debtThreshold = debtThresholdValue;
             lightDebtThreshold = lightDebtThresholdValue;
+            debtEnforcementThreshold = debtEnforcementThresholdValue;
+            debtEnforcementGraceDays = Mathf.Max(1, debtEnforcementGraceDaysValue);
             lowMentalThreshold = lowMentalThresholdValue;
             fragileMentalThreshold = fragileMentalThresholdValue;
             lowEnergyThreshold = lowEnergyThresholdValue;

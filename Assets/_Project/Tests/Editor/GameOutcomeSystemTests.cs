@@ -105,6 +105,42 @@ namespace DormLifeRoguelike.Tests.EditMode
             Assert.That(outcome.CurrentResult.EndingId, Is.EqualTo(EndingId.GraduatedResilient));
         }
 
+        [Test]
+        public void DebtTooHigh_ForGraceDays_ResolvesDebtEnforcementPrison()
+        {
+            var time = new TimeManager();
+            var stats = new StatSystem();
+            stats.SetBaseValue(StatType.Academic, 3.2f);
+            stats.SetBaseValue(StatType.Mental, 70f);
+            stats.SetBaseValue(StatType.Energy, 60f);
+            stats.SetBaseValue(StatType.Money, -2200f);
+
+            using var outcome = new GameOutcomeSystem(time, stats, outcomeConfig, academicConfig, endingDatabase);
+            time.AdvanceTime(24 * 3);
+
+            Assert.That(outcome.IsResolved, Is.True);
+            Assert.That(outcome.CurrentResult.Status, Is.EqualTo(GameOutcomeStatus.Lose));
+            Assert.That(outcome.CurrentResult.EndingId, Is.EqualTo(EndingId.DebtEnforcementPrison));
+        }
+
+        [Test]
+        public void DebtRecovered_BeforeGraceWindow_DoesNotResolve()
+        {
+            var time = new TimeManager();
+            var stats = new StatSystem();
+            stats.SetBaseValue(StatType.Academic, 3.2f);
+            stats.SetBaseValue(StatType.Mental, 70f);
+            stats.SetBaseValue(StatType.Energy, 60f);
+            stats.SetBaseValue(StatType.Money, -2200f);
+
+            using var outcome = new GameOutcomeSystem(time, stats, outcomeConfig, academicConfig, endingDatabase);
+            time.AdvanceTime(24 * 2);
+            stats.SetBaseValue(StatType.Money, -500f);
+            time.AdvanceTime(24 * 3);
+
+            Assert.That(outcome.IsResolved, Is.False);
+        }
+
         private static EndingDatabase CreatePopulatedEndingDatabase()
         {
             var database = ScriptableObject.CreateInstance<EndingDatabase>();

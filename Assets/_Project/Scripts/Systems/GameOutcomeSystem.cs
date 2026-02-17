@@ -12,6 +12,7 @@ namespace DormLifeRoguelike
         private readonly EndingDatabase endingDatabase;
         private bool isDisposed;
         private int consecutiveCriticalAcademicDays;
+        private int consecutiveDebtEnforcementDays;
 
         public GameOutcomeSystem(ITimeManager timeManager, IStatSystem statSystem, GameOutcomeConfig config, AcademicConfig academicConfig, EndingDatabase endingDatabase)
         {
@@ -24,6 +25,7 @@ namespace DormLifeRoguelike
 
             CurrentResult = GameOutcomeResult.None;
             consecutiveCriticalAcademicDays = 0;
+            consecutiveDebtEnforcementDays = 0;
             EvaluateIfNeeded(this.timeManager.Day);
         }
 
@@ -58,6 +60,7 @@ namespace DormLifeRoguelike
             }
 
             var academic = statSystem.GetStat(StatType.Academic);
+            var money = statSystem.GetStat(StatType.Money);
             if (academic < academicConfig.WarningMin)
             {
                 consecutiveCriticalAcademicDays++;
@@ -73,16 +76,31 @@ namespace DormLifeRoguelike
                 return;
             }
 
+            if (money < config.DebtEnforcementThreshold)
+            {
+                consecutiveDebtEnforcementDays++;
+            }
+            else
+            {
+                consecutiveDebtEnforcementDays = 0;
+            }
+
+            if (consecutiveDebtEnforcementDays >= config.DebtEnforcementGraceDays)
+            {
+                ResolveWithScore(currentDay, isEarlyFailure: true, isDebtEnforcementTriggered: true);
+                return;
+            }
+
             var campaignEndDay = Math.Max(config.TargetDays, timeManager.TotalDaysInAcademicYear);
             if (currentDay < campaignEndDay)
             {
                 return;
             }
 
-            ResolveWithScore(currentDay, isEarlyFailure: false);
+            ResolveWithScore(currentDay, isEarlyFailure: false, isDebtEnforcementTriggered: false);
         }
 
-        private void ResolveWithScore(int day, bool isEarlyFailure)
+        private void ResolveWithScore(int day, bool isEarlyFailure, bool isDebtEnforcementTriggered = false)
         {
             var academic = statSystem.GetStat(StatType.Academic);
             var mental = statSystem.GetStat(StatType.Mental);
@@ -108,7 +126,8 @@ namespace DormLifeRoguelike
                 energy,
                 money,
                 config,
-                endingDatabase);
+                endingDatabase,
+                isDebtEnforcementTriggered);
             var message = $"{ending.EpilogBody}\nScore: {score}/100 ({band})";
 
             CurrentResult = new GameOutcomeResult(

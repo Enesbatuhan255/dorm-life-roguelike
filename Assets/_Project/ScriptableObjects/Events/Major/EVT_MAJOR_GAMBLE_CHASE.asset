@@ -21,6 +21,7 @@ MonoBehaviour:
   - 0
   followUpEventIds:
   - EVT_MAJOR_GAMBLE_003
+  followUpDelayDays: 1
   choices:
   - text: Son bir tur
     effects:
@@ -33,4 +34,5 @@ MonoBehaviour:
       statType: 0
       comparisonOperator: 1
       value: 0
+    followUpDelayDays: 0
     timeAdvanceHours: 0

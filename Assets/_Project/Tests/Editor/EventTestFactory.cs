@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace DormLifeRoguelike.Tests.EditMode
 {
-    internal static class EventTestFactory
+    public static class EventTestFactory
     {
         private const BindingFlags InstancePrivate = BindingFlags.Instance | BindingFlags.NonPublic;
 
@@ -16,7 +16,9 @@ namespace DormLifeRoguelike.Tests.EditMode
             string category = "General",
             EventContextTag[] requiredContextTags = null,
             string[] followUpEventIds = null,
-            string[] firstChoiceFollowUpEventIds = null)
+            string[] firstChoiceFollowUpEventIds = null,
+            int followUpDelayDays = 0,
+            int firstChoiceFollowUpDelayDays = 0)
         {
             var eventData = ScriptableObject.CreateInstance<EventData>();
             SetField(eventData, "eventId", eventId);
@@ -26,12 +28,14 @@ namespace DormLifeRoguelike.Tests.EditMode
             SetField(eventData, "selectionWeight", selectionWeight);
             SetField(eventData, "requiredContextTags", new List<EventContextTag>(requiredContextTags ?? new EventContextTag[0]));
             SetField(eventData, "followUpEventIds", new List<string>(followUpEventIds ?? new string[0]));
+            SetField(eventData, "followUpDelayDays", followUpDelayDays);
 
             var choices = new List<EventChoice>();
             if (withSingleChoice)
             {
                 var choice = new EventChoice();
                 SetField(choice, "followUpEventIds", new List<string>(firstChoiceFollowUpEventIds ?? new string[0]));
+                SetField(choice, "followUpDelayDays", firstChoiceFollowUpDelayDays);
                 choices.Add(choice);
             }
 
@@ -60,6 +64,15 @@ namespace DormLifeRoguelike.Tests.EditMode
             string category,
             params string[][] choiceFollowUpEventIds)
         {
+            return CreateEventWithChoices(eventId, category, choiceFollowUpEventIds, null);
+        }
+
+        public static EventData CreateEventWithChoices(
+            string eventId,
+            string category,
+            string[][] choiceFollowUpEventIds,
+            int[] choiceFollowUpDelayDays)
+        {
             var eventData = ScriptableObject.CreateInstance<EventData>();
             SetField(eventData, "eventId", eventId);
             SetField(eventData, "title", eventId);
@@ -77,6 +90,10 @@ namespace DormLifeRoguelike.Tests.EditMode
                     var choice = new EventChoice();
                     SetField(choice, "text", $"Choice_{i}");
                     SetField(choice, "followUpEventIds", new List<string>(choiceFollowUpEventIds[i] ?? new string[0]));
+                    var choiceDelayDays = choiceFollowUpDelayDays != null && i < choiceFollowUpDelayDays.Length
+                        ? choiceFollowUpDelayDays[i]
+                        : 0;
+                    SetField(choice, "followUpDelayDays", choiceDelayDays);
                     choices.Add(choice);
                 }
             }

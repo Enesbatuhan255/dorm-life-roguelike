@@ -6,6 +6,12 @@ namespace DormLifeRoguelike
 {
     public sealed class EventScheduler : IEventScheduler, IDisposable
     {
+        private sealed class ScheduledFollowUp
+        {
+            public string FollowUpId;
+            public int TriggerDay;
+        }
+
         private const string MinorCategory = "minor";
         private const string MajorCategory = "major";
 
@@ -19,6 +25,8 @@ namespace DormLifeRoguelike
         private readonly HashSet<int> missingEventIdWarnings = new HashSet<int>();
         private readonly Dictionary<string, EventData> eventsById = new Dictionary<string, EventData>();
         private readonly HashSet<string> missingFollowUpWarnings = new HashSet<string>();
+        private readonly List<ScheduledFollowUp> scheduledFollowUps = new List<ScheduledFollowUp>();
+        private readonly HashSet<string> scheduledFollowUpKeys = new HashSet<string>();
         private readonly EventCooldownConfig cooldownConfig;
 
         private bool isDisposed;
@@ -85,7 +93,7 @@ namespace DormLifeRoguelike
         public EventData PickMinorEventForDay(int day, int hour)
         {
             var nowAbsHour = GetAbsoluteHour(day, hour);
-            return PickEvent(minorEventPool, nowAbsHour);
+            return PickEvent(minorEventPool, nowAbsHour, day);
         }
 
         public EventData PickMajorEventForDay(int day, int hour)
@@ -95,7 +103,7 @@ namespace DormLifeRoguelike
             // Guaranteed calendar majors are selected before generic weighted major events.
             if (timeManager.IsInExamWindow(day))
             {
-                var examEvent = PickPriorityMajor(nowAbsHour, IsExamMajorEvent);
+                var examEvent = PickPriorityMajor(nowAbsHour, day, IsExamMajorEvent);
                 if (examEvent != null)
                 {
                     return examEvent;
@@ -104,14 +112,14 @@ namespace DormLifeRoguelike
 
             if (timeManager.IsInflationShockDay(day))
             {
-                var inflationEvent = PickPriorityMajor(nowAbsHour, IsInflationMajorEvent);
+                var inflationEvent = PickPriorityMajor(nowAbsHour, day, IsInflationMajorEvent);
                 if (inflationEvent != null)
                 {
                     return inflationEvent;
                 }
             }
 
-            return PickEvent(majorEventPool, nowAbsHour);
+            return PickEvent(majorEventPool, nowAbsHour, day);
         }
 
         public bool TryQueueMinorForCurrentDay()
@@ -175,6 +183,7 @@ namespace DormLifeRoguelike
 
         private void HandleDayChanged(int _)
         {
+            EnqueueDueFollowUps(timeManager.Day);
             TryQueueMinorForCurrentDay();
         }
 
@@ -209,7 +218,7 @@ namespace DormLifeRoguelike
             }
         }
 
-        private EventData PickEvent(IReadOnlyList<EventData> pool, int nowAbsHour)
+        private EventData PickEvent(IReadOnlyList<EventData> pool, int nowAbsHour, int day)
         {
             if (pool == null || pool.Count == 0)
             {
@@ -220,7 +229,7 @@ namespace DormLifeRoguelike
             for (var i = 0; i < pool.Count; i++)
             {
                 var eventData = pool[i];
-                if (!IsEligible(eventData, nowAbsHour))
+                if (!IsEligible(eventData, nowAbsHour, day))
                 {
                     continue;
                 }
@@ -236,7 +245,7 @@ namespace DormLifeRoguelike
             return SelectWeightedRandomEvent(eligibleEvents);
         }
 
-        private EventData PickPriorityMajor(int nowAbsHour, Func<EventData, bool> predicate)
+        private EventData PickPriorityMajor(int nowAbsHour, int day, Func<EventData, bool> predicate)
         {
             eligibleEvents.Clear();
             for (var i = 0; i < majorEventPool.Count; i++)
@@ -247,7 +256,7 @@ namespace DormLifeRoguelike
                     continue;
                 }
 
-                if (!IsEligible(eventData, nowAbsHour))
+                if (!IsEligible(eventData, nowAbsHour, day))
                 {
                     continue;
                 }
@@ -281,14 +290,102 @@ namespace DormLifeRoguelike
             var choiceFollowUps = appliedChoice?.FollowUpEventIds;
             if (choiceFollowUps != null && choiceFollowUps.Count > 0)
             {
-                EnqueueFollowUps(completedEvent, choiceFollowUps);
+                EnqueueOrScheduleFollowUps(completedEvent, choiceFollowUps, appliedChoice.FollowUpDelayDays);
                 return;
             }
 
             var eventFollowUps = completedEvent.FollowUpEventIds;
             if (eventFollowUps != null && eventFollowUps.Count > 0)
             {
-                EnqueueFollowUps(completedEvent, eventFollowUps);
+                EnqueueOrScheduleFollowUps(completedEvent, eventFollowUps, completedEvent.FollowUpDelayDays);
+            }
+        }
+
+        private void EnqueueOrScheduleFollowUps(EventData completedEvent, IReadOnlyList<string> followUpIds, int delayDays)
+        {
+            var normalizedDelayDays = Math.Max(0, delayDays);
+            if (normalizedDelayDays == 0)
+            {
+                EnqueueFollowUps(completedEvent, followUpIds);
+                return;
+            }
+
+            ScheduleFollowUps(completedEvent, followUpIds, normalizedDelayDays);
+        }
+
+        private void ScheduleFollowUps(EventData completedEvent, IReadOnlyList<string> followUpIds, int delayDays)
+        {
+            if (completedEvent == null || followUpIds == null || followUpIds.Count == 0)
+            {
+                return;
+            }
+
+            var triggerDay = Math.Max(1, timeManager.Day + Math.Max(0, delayDays));
+            var completedEventId = NormalizeId(completedEvent.EventId);
+            var scheduledCount = 0;
+            for (var i = 0; i < followUpIds.Count; i++)
+            {
+                var followUpId = NormalizeId(followUpIds[i]);
+                if (string.IsNullOrWhiteSpace(followUpId))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(completedEventId) && followUpId == completedEventId)
+                {
+                    continue;
+                }
+
+                var scheduleKey = GetScheduledFollowUpKey(followUpId, triggerDay);
+                if (!scheduledFollowUpKeys.Add(scheduleKey))
+                {
+                    continue;
+                }
+
+                scheduledFollowUps.Add(new ScheduledFollowUp
+                {
+                    FollowUpId = followUpId,
+                    TriggerDay = triggerDay
+                });
+                scheduledCount++;
+            }
+
+            if (scheduledCount > 0)
+            {
+                eventManager.PublishSystemMessage(
+                    $"Bu kararın etkileri hemen görünmeyebilir. {delayDays} gün içinde yeni bir gelişme olabilir.");
+            }
+        }
+
+        private void EnqueueDueFollowUps(int day)
+        {
+            if (scheduledFollowUps.Count == 0)
+            {
+                return;
+            }
+
+            for (var i = scheduledFollowUps.Count - 1; i >= 0; i--)
+            {
+                var scheduled = scheduledFollowUps[i];
+                if (scheduled == null || day < scheduled.TriggerDay)
+                {
+                    continue;
+                }
+
+                scheduledFollowUps.RemoveAt(i);
+                scheduledFollowUpKeys.Remove(GetScheduledFollowUpKey(scheduled.FollowUpId, scheduled.TriggerDay));
+
+                if (!eventsById.TryGetValue(scheduled.FollowUpId, out var followUpEvent) || followUpEvent == null)
+                {
+                    if (missingFollowUpWarnings.Add(scheduled.FollowUpId))
+                    {
+                        Debug.LogWarning($"[EventScheduler] Follow-up eventId '{scheduled.FollowUpId}' was not found in scheduler pool.");
+                    }
+
+                    continue;
+                }
+
+                EnqueueWithCooldown(followUpEvent);
             }
         }
 
@@ -327,7 +424,12 @@ namespace DormLifeRoguelike
             }
         }
 
-        private bool IsEligible(EventData eventData, int nowAbsHour)
+        private static string GetScheduledFollowUpKey(string followUpId, int triggerDay)
+        {
+            return followUpId + "@" + triggerDay;
+        }
+
+        private bool IsEligible(EventData eventData, int nowAbsHour, int day)
         {
             if (eventData == null)
             {
@@ -342,10 +444,10 @@ namespace DormLifeRoguelike
             }
 
             var availableChoices = eventManager.GetAvailableChoices(eventData);
-            return availableChoices.Count > 0 && MatchesContext(eventData);
+            return availableChoices.Count > 0 && MatchesContext(eventData, day);
         }
 
-        private bool MatchesContext(EventData eventData)
+        private bool MatchesContext(EventData eventData, int day)
         {
             if (eventData == null || eventData.RequiredContextTags == null || eventData.RequiredContextTags.Count == 0)
             {
@@ -354,7 +456,7 @@ namespace DormLifeRoguelike
 
             for (var i = 0; i < eventData.RequiredContextTags.Count; i++)
             {
-                if (!MatchesTag(eventData.RequiredContextTags[i]))
+                if (!MatchesTag(eventData.RequiredContextTags[i], day))
                 {
                     return false;
                 }
@@ -363,9 +465,8 @@ namespace DormLifeRoguelike
             return true;
         }
 
-        private bool MatchesTag(EventContextTag tag)
+        private bool MatchesTag(EventContextTag tag, int day)
         {
-            var day = timeManager.Day;
             switch (tag)
             {
                 case EventContextTag.ExamWindow:
