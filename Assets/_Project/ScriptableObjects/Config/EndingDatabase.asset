@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f8c2a4f6f2149f8a56bc96d4627decb, type: 3}
+  m_Name: EndingDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EndingDatabase
+  entries:
+  - endingId: 1
+    epilogTitle: Atildin, Borc Buyudu
+    epilogBody: Akademik cokus erken geldi. Borc spiraline girdin ve hayata ciddi eksiyle basladin.
+  - endingId: 2
+    epilogTitle: Atildin, Tukenmislik
+    epilogBody: Sistem seni erken disari itti. Zihinsel yipranma toparlanmani zorlastiriyor.
+  - endingId: 3
+    epilogTitle: Mezunsun, Issizsin
+    epilogBody: Diploma var ama duzenli is yok. KYK ve biriken borclar nefes alani birakmiyor.
+  - endingId: 4
+    epilogTitle: Mezunsun, Asgari Ucret
+    epilogBody: Asgari ucretli bir is buldun. Borclar odeniyor ama hayat hala dar bir koridorda.
+  - endingId: 5
+    epilogTitle: Mezunsun, Kirilgan Denge
+    epilogBody: Dengeyi kurdun ama bedeli agir oldu. Bir aksilikte tum plan tekrar dagilabilir.
+  - endingId: 6
+    epilogTitle: Mezunsun, Ayaktasin
+    epilogBody: Zor donemi atlattin. Rahat degil ama ayakta kalmayi ogrenmis durumdasin.
+  - endingId: 7
+    epilogTitle: Dersler Uzadi, Borc Buyudu
+    epilogBody: Donem uzadi ve borc baskisi artti. Simdi zaman degil, para da aleyhine calisiyor.
+  - endingId: 8
+    epilogTitle: Uzatmali Donem
+    epilogBody: Okul bitti denemedi. Yeni donem daha sert olacak ve hata payi daha da dar.
+  fallbackTitle: Hayat Devam Ediyor
+  fallbackBody: Sartlar agir. Plan bozuldu ama hikaye bitmedi.

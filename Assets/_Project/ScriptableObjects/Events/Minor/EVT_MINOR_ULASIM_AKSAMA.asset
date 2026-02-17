@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e42b124a9bb6874ca39593305b2b68f, type: 3}
+  m_Name: EVT_MINOR_ULASIM_AKSAMA
+  m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
+  eventId: EVT_MINOR_TRANS_001
+  title: Ulasim aksadi
+  description: Uzayan yolculuk tum plani kaydirdi.
+  category: Minor
+  selectionWeight: 1
+  requiredContextTags:
+  - 9
+  choices:
+  - text: Yuruyerek don
+    effects:
+    - statType: 2
+      delta: -3
+    - statType: 1
+      delta: -1
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+    timeAdvanceHours: 0

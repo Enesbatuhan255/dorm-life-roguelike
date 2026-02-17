@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e42b124a9bb6874ca39593305b2b68f, type: 3}
+  m_Name: Evt_PartTimeShift
+  m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
+  eventId: EVT_MISC_001
+  title: Part-time Mesai Cikti
+  description: Aksam vardiyasi icin eleman ariyorlar.
+  selectionWeight: 1
+  choices:
+  - text: Vardiyaya git
+    effects:
+    - statType: 3
+      delta: 35
+    - statType: 2
+      delta: -12
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0
+  - text: Reddet ve ders calis
+    effects:
+    - statType: 4
+      delta: 8
+    - statType: 1
+      delta: 2
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 1
+      value: 0

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8261c8a485108b4cb23a90cd7935d8b, type: 3}
+  m_Name: GameOutcomeConfig
+  m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.GameOutcomeConfig
+  targetDays: 72
+  minAcademicPass: 70
+  useAcademicFailThreshold: 1
+  minAcademicFail: 40
+  minMental: 20
+  useEnergyThreshold: 0
+  minEnergy: 10
+  minMoney: -500
+  failPriority: 0
+  severeDebtThreshold: -1500
+  debtThreshold: -1000
+  lightDebtThreshold: -200
+  lowMentalThreshold: 25
+  fragileMentalThreshold: 45
+  lowEnergyThreshold: 20

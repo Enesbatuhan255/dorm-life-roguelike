@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7696f4872d1b1ca4ca36c1a38d69dbeb, type: 3}
+  m_Name: AcademicConfig
+  m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.AcademicConfig
+  safeMin: 2
+  warningMin: 1.8
+  criticalGraceDays: 7
+  failEpilog: Akademik ortalaman kritik seviyede kaldigi icin okuldan atildin.

@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e42b124a9bb6874ca39593305b2b68f, type: 3}
+  m_Name: EventData
+  m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.EventData
+  eventId: EVT_MISC_004
+  title: Event Title
+  description: Mevcut genel test eventi.
+  category: Minor`n  selectionWeight: 1
+  choices:
+  - text: "\xC7al\u0131\u015Fmaya devam et"
+    effects:
+    - statType: 4
+      delta: 10
+    - statType: 2
+      delta: -15
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 0
+      value: 0
+  - text: uyu
+    effects:
+    - statType: 2
+      delta: 20
+    - statType: 4
+      delta: -5
+    condition:
+      isEnabled: 0
+      statType: 0
+      comparisonOperator: 0
+      value: 0
