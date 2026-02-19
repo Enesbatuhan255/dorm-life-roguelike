@@ -12,8 +12,9 @@ namespace DormLifeRoguelike
                 EnsureQuickActionPanel();
             }
 
-            if (planStudyButton == null || planWorkButton == null || planSleepButton == null || planSocializeButton == null
-                || planWaitButton == null || planAdminButton == null || runPlanButton == null || clearPlanButton == null)
+            if (showAdvancedActions
+                && (planStudyButton == null || planWorkButton == null || planSleepButton == null || planSocializeButton == null
+                || planWaitButton == null || planAdminButton == null || runPlanButton == null || clearPlanButton == null))
             {
                 EnsurePlannerPanel();
             }
@@ -23,10 +24,12 @@ namespace DormLifeRoguelike
                 feedbackText = CreateFeedbackText();
             }
 
-            if (planPreviewText == null)
+            if (showAdvancedActions && planPreviewText == null)
             {
                 planPreviewText = CreatePlanPreviewText();
             }
+
+            ApplyUiSimplification();
         }
 
         private void EnsureQuickActionPanel()
@@ -172,6 +175,40 @@ namespace DormLifeRoguelike
             text.color = new Color(0.9f, 0.95f, 1f, 1f);
             text.text = "Plan: -";
             return text;
+        }
+
+        private void ApplyUiSimplification()
+        {
+            if (showAdvancedActions)
+            {
+                return;
+            }
+
+            var plannerPanel = transform.Find("PlannerPanel");
+            if (plannerPanel != null)
+            {
+                plannerPanel.gameObject.SetActive(false);
+            }
+
+            if (planPreviewText != null)
+            {
+                planPreviewText.gameObject.SetActive(false);
+            }
+
+            if (adminButton != null)
+            {
+                adminButton.gameObject.SetActive(false);
+            }
+
+            if (socializeButton != null)
+            {
+                socializeButton.gameObject.SetActive(false);
+            }
+
+            if (waitButton != null)
+            {
+                waitButton.gameObject.SetActive(false);
+            }
         }
 
         private static Button CreateButton(Transform parent, string title)

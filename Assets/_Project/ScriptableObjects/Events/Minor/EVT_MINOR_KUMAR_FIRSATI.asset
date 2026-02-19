@@ -18,7 +18,7 @@ MonoBehaviour:
     bir site gosteriyor. Kucuk at, buyur. Bu teklif gercek bir secenek: kisa yol
     mu, bedel mi?'
   category: Minor
-  selectionWeight: 1
+  selectionWeight: 1.05
   requiredContextTags: 00000000
   followUpEventIds: []
   followUpDelayDays: 0

@@ -15,6 +15,9 @@ namespace DormLifeRoguelike.Tests.EditMode
     {
         private const int RunsPerProfile = 40;
         private const int MaxSimDays = 72;
+        private const float MinRiskGapVsCautious = 0.05f;
+        private const float MaxBalancedHarshRate = 0.35f;
+        private const int MinBalancedDistinctEndings = 2;
 
         [Test]
         public void DebtEnforcement_RiskyProfile_ShowsHarsherOutcomesThanCautious()
@@ -33,8 +36,10 @@ namespace DormLifeRoguelike.Tests.EditMode
             Debug.Log(BuildSummary(cautious, balanced, risky));
             WriteBalanceReports(cautious, balanced, risky);
 
-            Assert.That(riskyHarshRate, Is.GreaterThan(cautiousHarshRate + 0.05f));
+            Assert.That(riskyHarshRate, Is.GreaterThan(cautiousHarshRate + MinRiskGapVsCautious));
             Assert.That(riskyHarshRate, Is.GreaterThanOrEqualTo(balancedHarshRate));
+            Assert.That(balancedHarshRate, Is.LessThanOrEqualTo(MaxBalancedHarshRate));
+            Assert.That(balanced.DistinctEndingCount, Is.GreaterThanOrEqualTo(MinBalancedDistinctEndings));
             Assert.That(risky.DebtEnforcementCount, Is.GreaterThanOrEqualTo(cautious.DebtEnforcementCount));
             Assert.That(cautious.ResilientCount, Is.GreaterThanOrEqualTo(risky.ResilientCount));
             Assert.That(risky.RiskyGambleChoiceCount, Is.GreaterThan(cautious.RiskyGambleChoiceCount));
@@ -48,6 +53,8 @@ namespace DormLifeRoguelike.Tests.EditMode
             var resilientCount = 0;
             var riskyGambleChoiceCount = 0;
             var harshDebtCount = 0;
+            var totalFinalAcademic = 0f;
+            var totalFinalMoney = 0f;
 
             for (var run = 0; run < RunsPerProfile; run++)
             {
@@ -59,6 +66,8 @@ namespace DormLifeRoguelike.Tests.EditMode
 
                 endings[result.EndingId]++;
                 riskyGambleChoiceCount += result.RiskyGambleChoiceCount;
+                totalFinalAcademic += result.FinalAcademic;
+                totalFinalMoney += result.FinalMoney;
 
                 if (result.EndingId == EndingId.DebtEnforcementPrison)
                 {
@@ -83,12 +92,15 @@ namespace DormLifeRoguelike.Tests.EditMode
                 debtEnforcementCount,
                 resilientCount,
                 riskyGambleChoiceCount,
-                harshDebtCount);
+                harshDebtCount,
+                totalFinalAcademic / RunsPerProfile,
+                totalFinalMoney / RunsPerProfile);
         }
 
         private static SingleRunResult SimulateSingleRun(SimulationProfile profile, IReadOnlyList<EventData> eventPool, int seed)
         {
             UnityEngine.Random.InitState(seed);
+            var behaviorVariant = ComputeBehaviorVariant(profile.Kind, seed);
 
             var time = new TimeManager();
             var stats = new StatSystem();
@@ -129,7 +141,7 @@ namespace DormLifeRoguelike.Tests.EditMode
                     return;
                 }
 
-                if (!string.Equals(eventData.EventId, "EVT_MINOR_GAMBLE_001", StringComparison.OrdinalIgnoreCase))
+                if (!IsTrackedGambleEvent(eventData.EventId))
                 {
                     return;
                 }
@@ -143,7 +155,7 @@ namespace DormLifeRoguelike.Tests.EditMode
             while (!outcomeSystem.IsResolved && time.Day <= MaxSimDays)
             {
                 ResolveAllPendingEvents(eventManager, profile, stats);
-                ApplyDailyPlan(actionService, stats, profile);
+                ApplyDailyPlan(actionService, stats, profile, time.Day, behaviorVariant);
                 ResolveAllPendingEvents(eventManager, profile, stats);
 
                 if (!outcomeSystem.IsResolved)
@@ -154,20 +166,66 @@ namespace DormLifeRoguelike.Tests.EditMode
 
             return new SingleRunResult(
                 outcomeSystem.CurrentResult.EndingId,
-                riskyGambleChoiceCount);
+                riskyGambleChoiceCount,
+                stats.GetStat(StatType.Academic),
+                stats.GetStat(StatType.Money));
         }
 
-        private static void ApplyDailyPlan(IPlayerActionService actionService, IStatSystem stats, SimulationProfile profile)
+        private static void ApplyDailyPlan(
+            IPlayerActionService actionService,
+            IStatSystem stats,
+            SimulationProfile profile,
+            int day,
+            int behaviorVariant)
         {
             var money = stats.GetStat(StatType.Money);
             var energy = stats.GetStat(StatType.Energy);
             var mental = stats.GetStat(StatType.Mental);
+            var primaryWorkTriggerMoney = profile.WorkTriggerMoney;
+            var secondaryWorkTriggerMoney = profile.SecondaryWorkTriggerMoney;
+            var socializeTriggerMental = profile.SocializeTriggerMental;
+            var lateTermDebtMoney = profile.LateTermDebtMoney;
+            var needsSleepRecovery = energy <= profile.SleepTriggerEnergy || mental <= profile.SleepTriggerMental;
 
-            if (money <= profile.WorkTriggerMoney && actionService.CanWorkThisWeek)
+            if (profile.Kind == ProfileKind.Balanced)
+            {
+                if (behaviorVariant == 0)
+                {
+                    // Study-first variant: accepts lower money before switching to work.
+                    primaryWorkTriggerMoney -= 180f;
+                    secondaryWorkTriggerMoney -= 220f;
+                    socializeTriggerMental += 4f;
+                    lateTermDebtMoney -= 180f;
+                }
+                else if (behaviorVariant == 2)
+                {
+                    // Cash-first variant: enters work loops earlier and tolerates less social recovery.
+                    primaryWorkTriggerMoney += 220f;
+                    secondaryWorkTriggerMoney += 280f;
+                    socializeTriggerMental -= 4f;
+                    lateTermDebtMoney += 140f;
+                }
+            }
+
+            var inLateTermDebtMode = day >= profile.LateTermDebtPivotDay && money <= lateTermDebtMoney;
+            var emergencyWork = money <= profile.EmergencyWorkMoney;
+            var isStudyBurstDay = profile.IsStudyBurstDay(day) && !needsSleepRecovery && !emergencyWork;
+            var forceStudyMode = profile.Kind == ProfileKind.Balanced && behaviorVariant == 0;
+            var didSecondaryWork = false;
+
+            if (forceStudyMode && !emergencyWork && !inLateTermDebtMode)
+            {
+                actionService.ApplyStudy(4, profile.StudyBand);
+            }
+            else if (isStudyBurstDay)
+            {
+                actionService.ApplyStudy(4, profile.StudyBand);
+            }
+            else if ((emergencyWork || inLateTermDebtMode || money <= primaryWorkTriggerMoney) && actionService.CanWorkThisWeek)
             {
                 actionService.ApplyWork(4, profile.WorkBand);
             }
-            else if (energy <= profile.SleepTriggerEnergy)
+            else if (needsSleepRecovery)
             {
                 actionService.ApplySleep(4);
             }
@@ -176,7 +234,20 @@ namespace DormLifeRoguelike.Tests.EditMode
                 actionService.ApplyStudy(4, profile.StudyBand);
             }
 
-            if (mental <= profile.SocializeTriggerMental)
+            if (forceStudyMode && !emergencyWork && !inLateTermDebtMode)
+            {
+                actionService.ApplyStudy(2, profile.StudyBand);
+            }
+            else if ((money <= secondaryWorkTriggerMoney || inLateTermDebtMode) && actionService.CanWorkThisWeek)
+            {
+                actionService.ApplyWork(2, profile.WorkBand);
+                didSecondaryWork = true;
+            }
+            else if (isStudyBurstDay)
+            {
+                actionService.ApplyStudy(2, profile.StudyBand);
+            }
+            else if (mental <= socializeTriggerMental)
             {
                 actionService.ApplySocialize(2);
             }
@@ -185,7 +256,15 @@ namespace DormLifeRoguelike.Tests.EditMode
                 actionService.ApplyWait(2);
             }
 
-            actionService.ApplyAdmin(2, profile.AdminBand);
+            if (forceStudyMode && !emergencyWork && !inLateTermDebtMode)
+            {
+                actionService.ApplyStudy(2, profile.StudyBand);
+            }
+            else
+            {
+                var adminBand = profile.GetAdminBandForDay(day, didSecondaryWork);
+                actionService.ApplyAdmin(2, adminBand);
+            }
         }
 
         private static void TryEndDayAndResolve(
@@ -296,7 +375,7 @@ namespace DormLifeRoguelike.Tests.EditMode
                 selectedChoice = profile.Kind switch
                 {
                     ProfileKind.Risky => followUpChoice ?? noFollowUpChoice,
-                    ProfileKind.Balanced when money < -1500f => followUpChoice ?? noFollowUpChoice,
+                    ProfileKind.Balanced when money < -900f => followUpChoice ?? noFollowUpChoice,
                     _ => noFollowUpChoice ?? availableChoices[0]
                 };
                 return true;
@@ -318,7 +397,7 @@ namespace DormLifeRoguelike.Tests.EditMode
                 selectedChoice = profile.Kind switch
                 {
                     ProfileKind.Risky => maxMoneyChoice ?? availableChoices[0],
-                    ProfileKind.Balanced when money < -1300f => maxMoneyChoice ?? availableChoices[0],
+                    ProfileKind.Balanced when money < -850f => maxMoneyChoice ?? availableChoices[0],
                     _ => lowPenaltyChoice ?? availableChoices[0]
                 };
                 return true;
@@ -336,7 +415,7 @@ namespace DormLifeRoguelike.Tests.EditMode
                 selectedChoice = profile.Kind switch
                 {
                     ProfileKind.Risky => chaseChoice ?? safeChoice ?? availableChoices[0],
-                    ProfileKind.Balanced when money < -1400f => chaseChoice ?? safeChoice ?? availableChoices[0],
+                    ProfileKind.Balanced when money < -950f => chaseChoice ?? safeChoice ?? availableChoices[0],
                     _ => safeChoice ?? availableChoices[0]
                 };
                 return true;
@@ -358,7 +437,7 @@ namespace DormLifeRoguelike.Tests.EditMode
                 selectedChoice = profile.Kind switch
                 {
                     ProfileKind.Risky => aggressiveChoice ?? availableChoices[0],
-                    ProfileKind.Balanced when money < -1200f => aggressiveChoice ?? availableChoices[0],
+                    ProfileKind.Balanced when money < -800f => aggressiveChoice ?? availableChoices[0],
                     _ => lowPenaltyChoice ?? availableChoices[0]
                 };
                 return true;
@@ -404,12 +483,13 @@ namespace DormLifeRoguelike.Tests.EditMode
             var energy = GetEnergyDelta(choice);
             var academic = GetAcademicDelta(choice);
             var followUpPenalty = HasFollowUp(choice) ? 0.5f : 0f;
+            var flagRiskPenalty = GetFlagRiskPenalty(choice);
 
             return profile.Kind switch
             {
-                ProfileKind.Cautious => (money * 0.55f) + (mental * 1.10f) + (energy * 0.85f) + (academic * 0.75f) - followUpPenalty,
-                ProfileKind.Risky => (money * 1.20f) + (mental * 0.30f) + (energy * 0.20f) + (academic * 0.20f),
-                _ => (money * 0.85f) + (mental * 0.70f) + (energy * 0.45f) + (academic * 0.40f) - (followUpPenalty * 0.5f)
+                ProfileKind.Cautious => (money * 0.55f) + (mental * 1.10f) + (energy * 0.85f) + (academic * 0.75f) - followUpPenalty - (flagRiskPenalty * 1.2f),
+                ProfileKind.Risky => (money * 1.20f) + (mental * 0.30f) + (energy * 0.20f) + (academic * 0.20f) - (flagRiskPenalty * 0.25f),
+                _ => (money * 0.85f) + (mental * 0.70f) + (energy * 0.45f) + (academic * 0.40f) - (followUpPenalty * 0.5f) - (flagRiskPenalty * 0.8f)
             };
         }
 
@@ -478,6 +558,79 @@ namespace DormLifeRoguelike.Tests.EditMode
             }
 
             return false;
+        }
+
+        private static float GetFlagRiskPenalty(EventChoice choice)
+        {
+            if (choice == null || choice.Flags == null || choice.Flags.Count == 0)
+            {
+                return 0f;
+            }
+
+            var penalty = 0f;
+            for (var i = 0; i < choice.Flags.Count; i++)
+            {
+                var flag = choice.Flags[i];
+                if (flag == null || flag.Mode != EventFlagChangeMode.AddNumeric)
+                {
+                    continue;
+                }
+
+                var key = flag.Key ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                if (string.Equals(key, "debt_pressure", StringComparison.OrdinalIgnoreCase))
+                {
+                    penalty += Math.Max(0f, flag.NumericValue) * 1.2f;
+                }
+                else if (string.Equals(key, "kyk_risk_days", StringComparison.OrdinalIgnoreCase))
+                {
+                    penalty += Math.Max(0f, flag.NumericValue) * 1.6f;
+                }
+                else if (string.Equals(key, "work_strain", StringComparison.OrdinalIgnoreCase))
+                {
+                    penalty += Math.Max(0f, flag.NumericValue) * 1.0f;
+                }
+                else if (string.Equals(key, "burnout", StringComparison.OrdinalIgnoreCase))
+                {
+                    penalty += Math.Max(0f, flag.NumericValue) * 1.4f;
+                }
+                else if (string.Equals(key, "illegal_fine_pending", StringComparison.OrdinalIgnoreCase))
+                {
+                    penalty += Math.Max(0f, flag.NumericValue) * 1.8f;
+                }
+                else if (string.Equals(key, "discipline", StringComparison.OrdinalIgnoreCase))
+                {
+                    penalty -= Math.Max(0f, flag.NumericValue) * 0.8f;
+                }
+            }
+
+            return Math.Max(0f, penalty);
+        }
+
+        private static bool IsTrackedGambleEvent(string eventId)
+        {
+            if (string.IsNullOrWhiteSpace(eventId))
+            {
+                return false;
+            }
+
+            return string.Equals(eventId, "EVT_MINOR_GAMBLE_001", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(eventId, "EVT_MAJOR_GAMBLE_002", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(eventId, "EVT_MAJOR_GAMBLE_003", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int ComputeBehaviorVariant(ProfileKind kind, int seed)
+        {
+            if (kind == ProfileKind.Balanced)
+            {
+                return Math.Abs(seed % 3);
+            }
+
+            return kind == ProfileKind.Risky ? 2 : 0;
         }
 
         private static int FindChoiceIndex(EventData eventData, EventChoice selectedChoice)
@@ -600,7 +753,7 @@ namespace DormLifeRoguelike.Tests.EditMode
         private static string BuildCsvReport(IReadOnlyList<ProfileBatchResult> profiles)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("profile,total_runs,harsh_debt_rate,debt_enforcement_count,resilient_count,risky_gamble_choice_count,endings");
+            sb.AppendLine("profile,total_runs,harsh_debt_rate,debt_enforcement_count,resilient_count,risky_gamble_choice_count,avg_final_academic,avg_final_money,endings");
 
             for (var i = 0; i < profiles.Count; i++)
             {
@@ -611,7 +764,9 @@ namespace DormLifeRoguelike.Tests.EditMode
                     p.EndingCounts
                         .OrderByDescending(kv => kv.Value)
                         .Select(kv => $"{kv.Key}:{kv.Value}"));
-                sb.AppendLine($"{p.Kind},{p.TotalRuns},{harshDebtRate},{p.DebtEnforcementCount},{p.ResilientCount},{p.RiskyGambleChoiceCount},\"{endings}\"");
+                var avgAcademic = p.AverageFinalAcademic.ToString("0.0000", CultureInfo.InvariantCulture);
+                var avgMoney = p.AverageFinalMoney.ToString("0.0", CultureInfo.InvariantCulture);
+                sb.AppendLine($"{p.Kind},{p.TotalRuns},{harshDebtRate},{p.DebtEnforcementCount},{p.ResilientCount},{p.RiskyGambleChoiceCount},{avgAcademic},{avgMoney},\"{endings}\"");
             }
 
             return sb.ToString();
@@ -619,14 +774,18 @@ namespace DormLifeRoguelike.Tests.EditMode
 
         private readonly struct SingleRunResult
         {
-            public SingleRunResult(EndingId endingId, int riskyGambleChoiceCount)
+            public SingleRunResult(EndingId endingId, int riskyGambleChoiceCount, float finalAcademic, float finalMoney)
             {
                 EndingId = endingId;
                 RiskyGambleChoiceCount = riskyGambleChoiceCount;
+                FinalAcademic = finalAcademic;
+                FinalMoney = finalMoney;
             }
 
             public EndingId EndingId { get; }
             public int RiskyGambleChoiceCount { get; }
+            public float FinalAcademic { get; }
+            public float FinalMoney { get; }
         }
 
         private readonly struct ProfileBatchResult
@@ -638,7 +797,9 @@ namespace DormLifeRoguelike.Tests.EditMode
                 int debtEnforcementCount,
                 int resilientCount,
                 int riskyGambleChoiceCount,
-                int harshDebtCount)
+                int harshDebtCount,
+                float averageFinalAcademic,
+                float averageFinalMoney)
             {
                 Kind = kind;
                 TotalRuns = totalRuns;
@@ -647,6 +808,8 @@ namespace DormLifeRoguelike.Tests.EditMode
                 ResilientCount = resilientCount;
                 RiskyGambleChoiceCount = riskyGambleChoiceCount;
                 HarshDebtCount = harshDebtCount;
+                AverageFinalAcademic = averageFinalAcademic;
+                AverageFinalMoney = averageFinalMoney;
             }
 
             public ProfileKind Kind { get; }
@@ -656,6 +819,9 @@ namespace DormLifeRoguelike.Tests.EditMode
             public int ResilientCount { get; }
             public int RiskyGambleChoiceCount { get; }
             public int HarshDebtCount { get; }
+            public float AverageFinalAcademic { get; }
+            public float AverageFinalMoney { get; }
+            public int DistinctEndingCount => EndingCounts?.Count ?? 0;
 
             public float HarshDebtRate => TotalRuns <= 0 ? 0f : (float)HarshDebtCount / TotalRuns;
 
@@ -666,7 +832,7 @@ namespace DormLifeRoguelike.Tests.EditMode
                     .Select(kv => $"{kv.Key}:{kv.Value}")
                     .ToArray();
                 var endings = string.Join(", ", ordered);
-                return $"{Kind} -> HarshRate={HarshDebtRate:0.00}, Prison={DebtEnforcementCount}, Resilient={ResilientCount}, RiskyGambleChoices={RiskyGambleChoiceCount}, Endings=[{endings}]";
+                return $"{Kind} -> HarshRate={HarshDebtRate:0.00}, Prison={DebtEnforcementCount}, Resilient={ResilientCount}, RiskyGambleChoices={RiskyGambleChoiceCount}, AvgAcademic={AverageFinalAcademic:0.00}, AvgMoney={AverageFinalMoney:0.0}, Endings=[{endings}]";
             }
         }
 
@@ -675,16 +841,32 @@ namespace DormLifeRoguelike.Tests.EditMode
             private SimulationProfile(
                 ProfileKind kind,
                 float workTriggerMoney,
+                float secondaryWorkTriggerMoney,
+                float emergencyWorkMoney,
                 float sleepTriggerEnergy,
+                float sleepTriggerMental,
                 float socializeTriggerMental,
+                int lateTermDebtPivotDay,
+                float lateTermDebtMoney,
+                int studyBurstStartDay,
+                int studyBurstIntervalDays,
+                bool useAdminWorkTradeoff,
                 MicroChallengeOutcomeBand studyBand,
                 MicroChallengeOutcomeBand workBand,
                 MicroChallengeOutcomeBand adminBand)
             {
                 Kind = kind;
                 WorkTriggerMoney = workTriggerMoney;
+                SecondaryWorkTriggerMoney = secondaryWorkTriggerMoney;
+                EmergencyWorkMoney = emergencyWorkMoney;
                 SleepTriggerEnergy = sleepTriggerEnergy;
+                SleepTriggerMental = sleepTriggerMental;
                 SocializeTriggerMental = socializeTriggerMental;
+                LateTermDebtPivotDay = lateTermDebtPivotDay;
+                LateTermDebtMoney = lateTermDebtMoney;
+                StudyBurstStartDay = studyBurstStartDay;
+                StudyBurstIntervalDays = studyBurstIntervalDays;
+                UseAdminWorkTradeoff = useAdminWorkTradeoff;
                 StudyBand = studyBand;
                 WorkBand = workBand;
                 AdminBand = adminBand;
@@ -692,11 +874,41 @@ namespace DormLifeRoguelike.Tests.EditMode
 
             public ProfileKind Kind { get; }
             public float WorkTriggerMoney { get; }
+            public float SecondaryWorkTriggerMoney { get; }
+            public float EmergencyWorkMoney { get; }
             public float SleepTriggerEnergy { get; }
+            public float SleepTriggerMental { get; }
             public float SocializeTriggerMental { get; }
+            public int LateTermDebtPivotDay { get; }
+            public float LateTermDebtMoney { get; }
+            public int StudyBurstStartDay { get; }
+            public int StudyBurstIntervalDays { get; }
+            public bool UseAdminWorkTradeoff { get; }
             public MicroChallengeOutcomeBand StudyBand { get; }
             public MicroChallengeOutcomeBand WorkBand { get; }
             public MicroChallengeOutcomeBand AdminBand { get; }
+
+            public bool IsStudyBurstDay(int day)
+            {
+                if (StudyBurstIntervalDays <= 0 || day < StudyBurstStartDay)
+                {
+                    return false;
+                }
+
+                return (day - StudyBurstStartDay) % StudyBurstIntervalDays == 0;
+            }
+
+            public MicroChallengeOutcomeBand GetAdminBandForDay(int day, bool didSecondaryWork)
+            {
+                if (!UseAdminWorkTradeoff || !didSecondaryWork)
+                {
+                    return AdminBand;
+                }
+
+                return day % 3 == 0
+                    ? MicroChallengeOutcomeBand.Poor
+                    : AdminBand;
+            }
 
             public static SimulationProfile For(ProfileKind kind)
             {
@@ -705,33 +917,65 @@ namespace DormLifeRoguelike.Tests.EditMode
                     ProfileKind.Cautious => new SimulationProfile(
                         kind,
                         workTriggerMoney: 80f,
+                        secondaryWorkTriggerMoney: -200f,
+                        emergencyWorkMoney: -900f,
                         sleepTriggerEnergy: 40f,
+                        sleepTriggerMental: 28f,
                         socializeTriggerMental: 45f,
+                        lateTermDebtPivotDay: 56,
+                        lateTermDebtMoney: -1300f,
+                        studyBurstStartDay: int.MaxValue,
+                        studyBurstIntervalDays: 0,
+                        useAdminWorkTradeoff: false,
                         studyBand: MicroChallengeOutcomeBand.Good,
                         workBand: MicroChallengeOutcomeBand.Good,
                         adminBand: MicroChallengeOutcomeBand.Good),
                     ProfileKind.Balanced => new SimulationProfile(
                         kind,
-                        workTriggerMoney: -50f,
-                        sleepTriggerEnergy: 30f,
-                        socializeTriggerMental: 35f,
-                        studyBand: MicroChallengeOutcomeBand.Good,
+                        workTriggerMoney: -800f,
+                        secondaryWorkTriggerMoney: -1200f,
+                        emergencyWorkMoney: -1700f,
+                        sleepTriggerEnergy: 26f,
+                        sleepTriggerMental: 24f,
+                        socializeTriggerMental: 30f,
+                        lateTermDebtPivotDay: 56,
+                        lateTermDebtMoney: -1300f,
+                        studyBurstStartDay: 3,
+                        studyBurstIntervalDays: 3,
+                        useAdminWorkTradeoff: true,
+                        studyBand: MicroChallengeOutcomeBand.Perfect,
                         workBand: MicroChallengeOutcomeBand.Good,
                         adminBand: MicroChallengeOutcomeBand.Good),
                     ProfileKind.Risky => new SimulationProfile(
                         kind,
                         workTriggerMoney: -99999f,
+                        secondaryWorkTriggerMoney: -99999f,
+                        emergencyWorkMoney: -99999f,
                         sleepTriggerEnergy: 15f,
+                        sleepTriggerMental: 8f,
                         socializeTriggerMental: 18f,
+                        lateTermDebtPivotDay: 32,
+                        lateTermDebtMoney: -600f,
+                        studyBurstStartDay: int.MaxValue,
+                        studyBurstIntervalDays: 0,
+                        useAdminWorkTradeoff: false,
                         studyBand: MicroChallengeOutcomeBand.Poor,
                         workBand: MicroChallengeOutcomeBand.Poor,
                         adminBand: MicroChallengeOutcomeBand.Poor),
                     _ => new SimulationProfile(
                         ProfileKind.Balanced,
-                        workTriggerMoney: -50f,
-                        sleepTriggerEnergy: 30f,
-                        socializeTriggerMental: 35f,
-                        studyBand: MicroChallengeOutcomeBand.Good,
+                        workTriggerMoney: -800f,
+                        secondaryWorkTriggerMoney: -1200f,
+                        emergencyWorkMoney: -1700f,
+                        sleepTriggerEnergy: 26f,
+                        sleepTriggerMental: 24f,
+                        socializeTriggerMental: 30f,
+                        lateTermDebtPivotDay: 56,
+                        lateTermDebtMoney: -1300f,
+                        studyBurstStartDay: 3,
+                        studyBurstIntervalDays: 3,
+                        useAdminWorkTradeoff: true,
+                        studyBand: MicroChallengeOutcomeBand.Perfect,
                         workBand: MicroChallengeOutcomeBand.Good,
                         adminBand: MicroChallengeOutcomeBand.Good)
                 };

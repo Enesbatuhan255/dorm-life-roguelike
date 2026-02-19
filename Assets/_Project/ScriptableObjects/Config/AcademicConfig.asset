@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7696f4872d1b1ca4ca36c1a38d69dbeb, type: 3}
   m_Name: AcademicConfig
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.AcademicConfig
-  safeMin: 2
-  warningMin: 1.8
+  safeMin: 1.6
+  warningMin: 1.4
   criticalGraceDays: 7
   failEpilog: Akademik ortalaman kritik seviyede kaldigi icin okuldan atildin.

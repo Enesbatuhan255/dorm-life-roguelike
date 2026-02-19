@@ -2,19 +2,19 @@
 Built from '6000.3/respin/6000.3.1f1-f56f53296c2c' branch; Version is '6000.3.1f1 (37142da19a94) revision 3609645'; Using compiler version '194234433'; Build Type 'Release'
 OS: 'Windows 11  (10.0.26200) 64bit Professional' Language: 'tr' Physical Memory: 15654 MB
 BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
-Date: 2026-02-17T12:22:07Z
-[Licensing::IpcConnector] Successfully connected to: "LicenseClient-enesb" at "2026-02-17T12:22:07.5074408Z"
+Date: 2026-02-17T22:40:55Z
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-enesb" at "2026-02-17T22:40:55.1097723Z"
 
 COMMAND LINE ARGUMENTS:
 C:\Program Files\Unity\Hub\Editor\6000.3.1f1\Editor\Unity.exe
 -batchmode
 -nographics
 -projectPath
-C:\DormLifeRoguelike\My project
+C:\DormLifeRoguelike\MyProject
 -executeMethod
 PlayModeSmokeRunner.Run
 -logFile
-C:\DormLifeRoguelike\My project\playmode-smoke.log
-Successfully changed project path to: C:\DormLifeRoguelike\My project
-C:/DormLifeRoguelike/My project
+C:\DormLifeRoguelike\MyProject\playmode-smoke.log
+Successfully changed project path to: C:\DormLifeRoguelike\MyProject
+C:/DormLifeRoguelike/MyProject
 Exiting without the bug reporter. Application will terminate with return code 1

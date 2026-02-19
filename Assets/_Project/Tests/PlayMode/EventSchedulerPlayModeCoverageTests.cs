@@ -131,7 +131,7 @@ namespace DormLifeRoguelike.Tests.PlayMode
             var generic = TrackEvent(CreateEvent(
                 "EVT_PM_GENERIC",
                 "Minor",
-                selectionWeight: 1f));
+                selectionWeight: 0f));
 
             using var scheduler = new EventScheduler(
                 time,

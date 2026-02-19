@@ -16,10 +16,10 @@ MonoBehaviour:
   perCategoryOverrides: []
   perEventOverrides:
   - eventId: EVT_MAJOR_DEBT_001
-    cooldownHours: 24
+    cooldownHours: 18
   - eventId: EVT_MAJOR_DEBT_002
-    cooldownHours: 24
+    cooldownHours: 18
   - eventId: EVT_MAJOR_GAMBLE_002
-    cooldownHours: 24
+    cooldownHours: 18
   - eventId: EVT_MAJOR_GAMBLE_003
-    cooldownHours: 24
+    cooldownHours: 18

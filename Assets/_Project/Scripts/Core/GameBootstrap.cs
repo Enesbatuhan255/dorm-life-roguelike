@@ -48,6 +48,10 @@ namespace DormLifeRoguelike
         [SerializeField] private bool pauseRealtimeAfterGameResolved = true;
         [SerializeField] private bool requireApplicationFocusForRealtimeProgression = false;
 
+        [Header("UI Mode")]
+        [SerializeField] private bool enableFlagDebugPanel = false;
+        [SerializeField] private bool enableSaveLoadPanel = false;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
@@ -205,8 +209,7 @@ namespace DormLifeRoguelike
 
             EnsureGameOutcomePanelPresenter();
             EnsureMicroChallengePanelPresenter();
-            EnsureFlagDebugPanelPresenter();
-            EnsureSaveLoadPanelPresenter();
+            ConfigureOptionalPanels();
             EnsureRealtimeTimeDriver();
         }
 
@@ -444,6 +447,39 @@ namespace DormLifeRoguelike
 
             var fallbackRoot = new GameObject("SaveLoadPanelRoot");
             fallbackRoot.AddComponent<SaveLoadPanelPresenter>();
+        }
+
+        private void ConfigureOptionalPanels()
+        {
+            if (enableFlagDebugPanel)
+            {
+                EnsureFlagDebugPanelPresenter();
+            }
+            else
+            {
+                SetPresenterEnabled<FlagDebugPanelPresenter>(false);
+            }
+
+            if (enableSaveLoadPanel)
+            {
+                EnsureSaveLoadPanelPresenter();
+            }
+            else
+            {
+                SetPresenterEnabled<SaveLoadPanelPresenter>(false);
+            }
+        }
+
+        private static void SetPresenterEnabled<T>(bool isEnabled) where T : Behaviour
+        {
+            var presenter = FindFirstObjectByType<T>();
+            if (presenter == null)
+            {
+                return;
+            }
+
+            presenter.enabled = isEnabled;
+            presenter.gameObject.SetActive(isEnabled);
         }
 
         private void EnsureRealtimeTimeDriver()

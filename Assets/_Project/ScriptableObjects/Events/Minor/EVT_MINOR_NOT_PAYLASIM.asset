@@ -17,7 +17,7 @@ MonoBehaviour:
   description: 'Bir arkadas notlarini paylasti. Herkes ekran goruntusu aliyor. Sen
     de alabilirsin. Ama bunun da bir bedeli var: calismayi erteliyorsun.'
   category: Minor
-  selectionWeight: 1.15
+  selectionWeight: 1.2
   requiredContextTags: 04000000
   followUpEventIds: []
   followUpDelayDays: 0
@@ -26,7 +26,7 @@ MonoBehaviour:
     notes: 
     effects:
     - statType: 4
-      delta: 0.04
+      delta: 0.05
     - statType: 1
       delta: 1
     flags:
@@ -48,7 +48,7 @@ MonoBehaviour:
     - statType: 1
       delta: -1
     - statType: 4
-      delta: 0.02
+      delta: 0.03
     flags: []
     condition:
       isEnabled: 0

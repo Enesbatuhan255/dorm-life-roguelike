@@ -17,7 +17,7 @@ MonoBehaviour:
   description: 'Danisman mail atmis. Kisa ve resmi: Performansiniz yetersiz. Asil
     sorun cumle degil; cumlenin sende actigi bosluk. Cunku sen zaten bunu biliyordun.'
   category: Major
-  selectionWeight: 1
+  selectionWeight: 1.05
   requiredContextTags: 04000000
   followUpEventIds: []
   followUpDelayDays: 0
@@ -26,7 +26,7 @@ MonoBehaviour:
     notes: 
     effects:
     - statType: 4
-      delta: 0.1
+      delta: 0.12
     - statType: 1
       delta: -3
     - statType: 2
@@ -48,7 +48,7 @@ MonoBehaviour:
     notes: 
     effects:
     - statType: 4
-      delta: 0.06
+      delta: 0.08
     - statType: 1
       delta: -1
     - statType: 2

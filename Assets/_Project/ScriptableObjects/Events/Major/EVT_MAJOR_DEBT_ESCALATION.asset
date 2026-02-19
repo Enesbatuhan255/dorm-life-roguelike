@@ -18,7 +18,7 @@ MonoBehaviour:
     pratikte daha pahali. Ustelik sabit kesinti gunun tam ortasina denk geliyor.
     Bugun zaten sinirdasin; bu karar birkac gunu etkileyecek.
   category: Major
-  selectionWeight: 1.15
+  selectionWeight: 1.2
   requiredContextTags: 01000000
   followUpEventIds: []
   followUpDelayDays: 0

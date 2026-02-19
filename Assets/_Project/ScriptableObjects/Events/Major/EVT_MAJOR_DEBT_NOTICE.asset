@@ -18,7 +18,7 @@ MonoBehaviour:
     odemeler tek kalemde toplandi. Gozun bir yandan yurt kartina, bir yandan cuzdana
     gidiyor. Bugun ne yaparsan yap, bu konu pesini birakmayacak.'
   category: Major
-  selectionWeight: 1.1
+  selectionWeight: 1.15
   requiredContextTags: 00000000
   followUpEventIds: []
   followUpDelayDays: 0

@@ -35,6 +35,9 @@ namespace DormLifeRoguelike
         [SerializeField] private int socializeHours = 1;
         [SerializeField] private int waitHours = 1;
 
+        [Header("UI Simplification")]
+        [SerializeField] private bool showAdvancedActions = false;
+
         private IPlayerActionService playerActionService;
         private IDayPlanningService dayPlanningService;
         private ITimeManager timeManager;

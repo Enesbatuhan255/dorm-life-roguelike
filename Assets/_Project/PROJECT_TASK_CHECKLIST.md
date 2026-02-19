@@ -59,11 +59,12 @@
 - [x] `MicroChallengePanelPresenter` split into partials (`MicroChallengePanelPresenter.cs` + `.Ui`)
 - [x] Stat HUD readability polish applied (`StatHudPresenter`: risk tags + color-coded values + improved formatting)
 - [x] No-space path migration toolkit added (`migrate_project_path_no_spaces.ps1` + runbook + dry-run validated)
+- [x] Project path migrated to no-space folder and MCP stability re-validated (`C:\DormLifeRoguelike\MyProject`)
+- [x] PlayMode context-tag coverage test made deterministic (removed weighted-random flake path)
 
 ## In Progress
 - [ ] Tune cooldown/category/queue policy based on focused playtests
 - [ ] Continue UI maintainability pass (shared UI builder/helpers for panel presenters)
-- [ ] Execute project path migration to no-space folder and re-validate MCP stability
 
 ## Next
 - [ ] Add richer HUD visuals (icons/mini-bars) if art direction allows

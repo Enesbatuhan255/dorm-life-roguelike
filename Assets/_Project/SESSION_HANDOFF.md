@@ -1,7 +1,7 @@
 # DormLifeRoguelike - Session Handoff
 
 Last updated: 2026-02-18
-Project root: `C:\DormLifeRoguelike\My project`
+Project root: `C:\DormLifeRoguelike\MyProject`
 
 ## Quick Update (2026-02-18)
 - [x] Tuning Sprint V1 kicked off (cooldown/category/queue focus)
@@ -33,13 +33,73 @@ Project root: `C:\DormLifeRoguelike\My project`
     - `BalanceSimulationTests.SelectChoice` now includes event-specific debt/gamble branch heuristics + profile-weighted fallback scoring.
     - Gameplay test suite remains passing.
     - Baseline balance summary still unchanged; next lever should be simulation profile thresholds/day-plan behavior.
+  - Iteration V1-D applied (simulation gate + profile/day-plan sensitivity pass):
+    - `BalanceSimulationTests` acceptance guardrails now enforce:
+      - risk gap (`RiskyHarshRate > CautiousHarshRate + 0.05`)
+      - balanced upper bound (`BalancedHarshRate <= 0.35`)
+      - minimum balanced ending diversity (`>=1`)
+    - `ApplyDailyPlan` now uses profile-specific secondary/emergency work and late-term debt pivot thresholds.
+    - Debt/gamble branch thresholds for `Balanced` profile lowered in `SelectChoice` specialization.
+    - Risky gamble metric expanded to include major gamble chain choices.
+    - Validation after changes:
+      - EditMode (`DormLifeRoguelike.Tests`): Passed 77/77
+      - PlayMode (`DormLifeRoguelike.Tests`): Passed 4/4
+    - Current note:
+      - Baseline ending distribution is still low-diversity in deterministic batch (`Balanced` remains `FailedExtendedYear:40`), so next tuning should target production event content cadence/thresholds rather than only simulation harness.
+  - Iteration V1-E applied (production content cadence + academic support):
+    - Debt/Gamble per-event cooldown overrides reduced (`24h -> 18h`) for:
+      - `EVT_MAJOR_DEBT_001`, `EVT_MAJOR_DEBT_002`, `EVT_MAJOR_GAMBLE_002`, `EVT_MAJOR_GAMBLE_003`
+    - Weights increased:
+      - `EVT_MAJOR_DEBT_001`: `1.10 -> 1.15`
+      - `EVT_MAJOR_DEBT_002`: `1.15 -> 1.20`
+      - `EVT_MINOR_GAMBLE_001`: `1.00 -> 1.05`
+      - `EVT_MAJOR_ACADEMIC_001`: `1.00 -> 1.05`
+      - `EVT_MINOR_STUDY_001`: `1.15 -> 1.20`
+    - Academic deltas improved:
+      - `EVT_MAJOR_ACADEMIC_001`: `+0.10 -> +0.12`, `+0.06 -> +0.08`
+      - `EVT_MINOR_STUDY_001`: `+0.04 -> +0.05`, `+0.02 -> +0.03`
+    - Validation:
+      - EditMode (`DormLifeRoguelike.Tests`): Passed
+      - PlayMode (`DormLifeRoguelike.Tests`): Passed
+      - Balance simulation: Passed
+    - Metric shift:
+      - `RiskyGambleChoiceCount` increased (`21 -> 51`)
+      - Ending distribution unchanged (`Cautious/Balanced` still `FailedExtendedYear:40`)
+  - Iteration V1-F applied (outcome threshold probe):
+    - `GameOutcomeConfig.minAcademicPass`: `70 -> 60`
+    - Validation remained green (EditMode + PlayMode + BalanceSimulation).
+    - Ending distribution still unchanged in deterministic batch.
+  - Iteration V1-G applied (simulation diversity unlock):
+    - Root cause identified:
+      - simulation pass/fail path is driven by `AcademicConfig.SafeMin` + policy behavior; `GameOutcomeConfig.minAcademicPass` was not the bottleneck.
+    - `BalanceSimulationTests` updates:
+      - deterministic behavior variants for Balanced (study-first / neutral / cash-first)
+      - stronger study-first schedule (primary+secondary+admin slots push study unless emergency debt mode)
+      - flag-risk penalties added to choice scoring (`debt_pressure`, `kyk_risk_days`, `work_strain`, `burnout`, `illegal_fine_pending`)
+      - reporting expanded with `avg_final_academic` and `avg_final_money`
+      - Balanced ending diversity gate tightened (`>=2`)
+    - Config probe:
+      - `AcademicConfig.safeMin: 2.0 -> 1.6`
+      - `AcademicConfig.warningMin: 1.8 -> 1.4`
+    - Validation:
+      - EditMode (`DormLifeRoguelike.Tests`): Passed
+      - PlayMode (`DormLifeRoguelike.Tests`): Passed
+      - Balance simulation test: Passed
+    - Latest balance snapshot:
+      - Cautious: `FailedExtendedYear:40`, `avg_final_academic=0.7498`, `avg_final_money=-4.5`
+      - Balanced: `FailedExtendedYear:32`, `GraduatedPrecariousStable:7`, `GraduatedMinWageDebt:1`, `avg_final_academic=0.9373`, `avg_final_money=112.8`
+      - Risky: `FailedExtendedYear:37`, `ExpelledDebtSpiral:3`, `avg_final_academic=0.7135`, `avg_final_money=-494.4`
 - [x] Operational path-risk mitigation package prepared (no-space migration)
   - Added migration script:
     - `Tools/mcp/migrate_project_path_no_spaces.ps1`
   - Added runbook:
     - `Assets/_Project/Reports/PROJECT_PATH_MIGRATION_RUNBOOK.md`
   - Dry-run validated successfully from current workspace.
-  - Note: project folder move is not executed yet in this session.
+  - Project path migration executed to `C:\DormLifeRoguelike\MyProject`.
+  - MCP connectivity and playmode toggle re-validated after migration.
+- [x] PlayMode flake hardening applied for scheduler context-tag coverage
+  - `Assets/_Project/Tests/PlayMode/EventSchedulerPlayModeCoverageTests.cs`
+  - `ContextTags_RequireExamWindowAndMoneyLow` no longer depends on a non-deterministic weighted branch.
 - [x] Stat HUD polish pass completed in code
   - `Assets/_Project/Scripts/UI/StatHudPresenter.cs`
   - Added risk-aware, color-coded stat rendering:
@@ -182,7 +242,7 @@ Project root: `C:\DormLifeRoguelike\My project`
   - `ActionPanelPresenter` / `TransactionFeedPresenter` / `DayChangePopupPresenter` can self-create missing UI references at runtime
   - `GameBootstrap` auto-attaches `GameOutcomePanelPresenter` if missing in scene
 - [x] Current blocker/risk note:
-  - Unity MCP warns about project path containing spaces (`C:\DormLifeRoguelike\My project`), which may cause intermittent MCP instability
+  - Resolved: no-space project path is now active (`C:\DormLifeRoguelike\MyProject`)
 - [x] EditMode regression snapshot:
   - Project gameplay tests (`DormLifeRoguelike.Tests.EditMode`) passed: 16/16
   - Full editor-wide run showed 3 unrelated package/installer test failures (locale/line-ending sensitive), not in `_Project` gameplay code

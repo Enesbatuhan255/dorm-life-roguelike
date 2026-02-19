@@ -23,8 +23,8 @@ Expected:
 
 ## Baseline lock (2026-02-18)
 
-- Gameplay EditMode gate (`DormLifeRoguelike.Tests.EditMode`): Passed 76/76
-- Gameplay PlayMode gate (`DormLifeRoguelike.Tests.PlayMode`): Passed 1/1
+- Gameplay EditMode gate (`DormLifeRoguelike.Tests.EditMode`): Passed 77/77
+- Gameplay PlayMode gate (`DormLifeRoguelike.Tests.PlayMode`): Passed 4/4
 - Choice coverage report: generated, 0 violations
 - Event chain graph report: generated, all exported targets resolve
 

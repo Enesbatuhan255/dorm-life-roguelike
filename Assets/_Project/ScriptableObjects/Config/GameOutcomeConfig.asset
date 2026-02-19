@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GameOutcomeConfig
   m_EditorClassIdentifier: Assembly-CSharp::DormLifeRoguelike.GameOutcomeConfig
   targetDays: 72
-  minAcademicPass: 70
+  minAcademicPass: 60
   useAcademicFailThreshold: 1
   minAcademicFail: 40
   minMental: 20
